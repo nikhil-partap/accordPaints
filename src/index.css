@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #FAF9F5;
+  color: #142333;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.font-serif-editorial {
+  font-family: 'Fraunces', Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+/* Hide scrollbars on horizontal swatch carousel */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 4s ease-in-out infinite;
+}
