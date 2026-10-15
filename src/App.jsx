@@ -14,7 +14,11 @@ import {
   X,
   Upload,
   MoveHorizontal,
+  Award,
+  ShieldCheck,
 } from 'lucide-react';
+import ProductsSection from './ProductsSection';
+import ProductDetailPage from './ProductDetailPage';
 
 const Instagram = ({ className = 'w-3.5 h-3.5' }) => (
   <svg
@@ -831,6 +835,23 @@ function BeforeAfterCard({ item }) {
 export default function App() {
   const { scrollY, scrollProgress } = useScrollMetrics();
 
+  // Active view: 'home' | 'product'
+  const [currentView, setCurrentView] = useState(() => {
+    return window.location.hash === '#product' ? 'product' : 'home';
+  });
+
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash === '#product') {
+        setCurrentView('product');
+      } else if (!window.location.hash || window.location.hash === '#top' || window.location.hash === '#home') {
+        setCurrentView('home');
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
   // Interactive Hero wall tint state
   const [heroWallColor, setHeroWallColor] = useState('#BC5B45');
   const [heroWallName, setHeroWallName] = useState('Terracotta Dream');
@@ -905,6 +926,23 @@ export default function App() {
     setMousePos({ x, y });
   };
 
+  if (currentView === 'product') {
+    return (
+      <ProductDetailPage
+        onBackToHome={() => {
+          setCurrentView('home');
+          window.location.hash = '';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onSelectColor={(item) => {
+          setHeroWallColor(item.hex);
+          setHeroWallName(item.name);
+          triggerToast(`Applied "${item.name}" to room preview!`);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FAF9F5] font-sans text-[#142333] selection:bg-[#1B5153] selection:text-white flex flex-col w-full overflow-x-hidden">
       {/* Top Multi-Color Paint Stroke Scroll Progress Bar */}
@@ -946,10 +984,11 @@ export default function App() {
               href="#top"
               className="flex items-center gap-2.5 group focus:outline-none"
             >
-              <AccordLogo className="w-8 h-8 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-105" />
-              <span className="font-bold text-lg sm:text-[19px] tracking-tight text-[#142333]">
-                Accord <span className="font-medium text-slate-600">Paints</span>
-              </span>
+              <img
+                src="/images/brand/accord-logo-mockup.png"
+                alt="Accord Paints"
+                className="h-7 sm:h-8 w-auto object-contain"
+              />
             </a>
 
             {/* Center Nav Links */}
@@ -960,13 +999,16 @@ export default function App() {
                 onMouseLeave={() => setProductsOpen(false)}
               >
                 <button
-                  onClick={() => setProductsOpen(!productsOpen)}
-                  className="flex items-center gap-1 hover:text-[#1B5153] transition-colors py-1"
+                  onClick={() => {
+                    setProductsOpen(false);
+                    scrollToSection('products');
+                  }}
+                  className="flex items-center gap-1 hover:text-[#0D4A52] transition-colors py-1"
                 >
                   <span>Products</span>
                   <ChevronDown
                     className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                      productsOpen ? 'rotate-180 text-[#1B5153]' : ''
+                      productsOpen ? 'rotate-180 text-[#0D4A52]' : ''
                     }`}
                   />
                 </button>
@@ -1001,7 +1043,7 @@ export default function App() {
                           key={prod.title}
                           onClick={() => {
                             setProductsOpen(false);
-                            scrollToSection('palettes');
+                            scrollToSection('products');
                           }}
                           className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 text-left transition-colors"
                         >
@@ -1025,8 +1067,8 @@ export default function App() {
               </div>
 
               <button
-                onClick={() => scrollToSection('palettes')}
-                className="hover:text-[#1B5153] transition-colors"
+                onClick={() => scrollToSection('products')}
+                className="hover:text-[#0D4A52] transition-colors"
               >
                 Color Inspiration
               </button>
@@ -1034,22 +1076,22 @@ export default function App() {
                 onClick={() =>
                   triggerToast('Store Locator: 140+ Accord Paint Studios open near you!')
                 }
-                className="hover:text-[#1B5153] transition-colors"
+                className="hover:text-[#0D4A52] transition-colors"
               >
                 Find a Store
               </button>
               <button
                 onClick={() => scrollToSection('transformations')}
-                className="hover:text-[#1B5153] transition-colors"
+                className="hover:text-[#0D4A52] transition-colors"
               >
                 Get Inspired
               </button>
             </nav>
 
-            {/* Right CTA Button */}
+            {/* Right Action Button (Single Pill Button matching Mockup) */}
             <button
               onClick={() => scrollToSection('visualizer')}
-              className="bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs sm:text-[13px] font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow transition-all duration-200 active:scale-95"
+              className="bg-[#0D4A52] hover:bg-[#09393F] text-white text-xs sm:text-[13.5px] font-semibold px-6 py-2.5 rounded-full shadow-sm hover:shadow transition-all duration-200 active:scale-95"
             >
               Visualizer App
             </button>
@@ -1088,14 +1130,14 @@ export default function App() {
               <Reveal direction="up" delay={220}>
                 <div className="mt-7 flex flex-wrap items-center gap-3.5">
                   <button
-                    onClick={() => scrollToSection('palettes')}
-                    className="bg-[#1B5153] hover:bg-[#133C3E] text-white font-semibold text-xs sm:text-sm px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-95"
+                    onClick={() => scrollToSection('products')}
+                    className="bg-[#0D4A52] hover:bg-[#09393F] text-white font-semibold text-xs sm:text-sm px-7 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-95"
                   >
                     Explore Our Palette
                   </button>
                   <button
                     onClick={() => scrollToSection('visualizer')}
-                    className="bg-transparent hover:bg-slate-900/5 text-[#142333] font-semibold text-xs sm:text-sm px-6 py-3 rounded-full border border-slate-500/80 transition-all duration-200 active:scale-95"
+                    className="bg-transparent hover:bg-slate-100/70 text-[#0D4A52] font-semibold text-xs sm:text-sm px-7 py-3 rounded-full border border-[#0D4A52] transition-all duration-200 active:scale-95"
                   >
                     Try Visualizer
                   </button>
@@ -1104,26 +1146,26 @@ export default function App() {
 
               {/* 3 Feature Trust Badges */}
               <Reveal direction="up" delay={300}>
-                <div className="mt-8 pt-2 grid grid-cols-3 gap-3 sm:gap-5 max-w-md">
+                <div className="mt-9 pt-1 flex flex-wrap items-center gap-6 sm:gap-7">
                   <div className="flex items-center gap-2">
-                    <Leaf className="w-4 h-4 text-[#1B5153] shrink-0 stroke-[2]" />
-                    <span className="text-[11px] sm:text-xs text-slate-600 leading-tight">
+                    <Leaf className="w-4 h-4 text-[#142333] shrink-0 stroke-[1.8]" />
+                    <span className="text-[11px] sm:text-xs text-slate-700 font-medium leading-tight">
                       Low VOC /
                       <br />
                       Eco-friendly
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-[#1B5153] shrink-0 stroke-[2]" />
-                    <span className="text-[11px] sm:text-xs text-slate-600 leading-tight">
+                    <Palette className="w-4 h-4 text-[#142333] shrink-0 stroke-[1.8]" />
+                    <span className="text-[11px] sm:text-xs text-slate-700 font-medium leading-tight">
                       Rich, Long-
                       <br />
                       Lasting Color
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#1B5153] shrink-0 stroke-[2]" />
-                    <span className="text-[11px] sm:text-xs text-slate-600 leading-tight">
+                    <ShieldCheck className="w-4 h-4 text-[#142333] shrink-0 stroke-[1.8]" />
+                    <span className="text-[11px] sm:text-xs text-slate-700 font-medium leading-tight">
                       100% Satisfaction
                       <br />
                       Guarantee
@@ -1134,84 +1176,30 @@ export default function App() {
             </div>
 
             {/* Right Column: Room Showcase with Painterly Brush Strokes & Paint Can */}
-            <div className="lg:col-span-6 relative flex items-center justify-center py-6 px-4 sm:px-8">
+            <div className="lg:col-span-6 relative flex items-center justify-center py-4 px-2 sm:px-4">
               <Reveal
                 direction="left"
                 delay={150}
-                className="relative w-full max-w-[460px]"
+                className="relative w-full max-w-[530px] flex items-center justify-center group"
               >
-                {/* SVG Multi-Color Brush Strokes Behind Photo */}
-                <HeroBrushStrokes scrollY={scrollY} mousePos={mousePos} />
+                {/* Authentic Mockup Visual with Painterly Acrylic Strokes, Living Room & Accord Paint Tin */}
+                <img
+                  src="/images/brand/hero-mockup-transparent.png"
+                  alt="Accord Paints Designer Living Room and Color Palette"
+                  className="w-full h-auto object-contain select-none transition-transform duration-500 hover:scale-[1.015]"
+                  draggable={false}
+                />
 
-                {/* Main Rounded Interior Room Frame */}
-                <div className="relative z-10 rounded-[26px] overflow-hidden shadow-2xl border-4 border-white/90 aspect-[4/3.4] bg-[#A75540]">
-                  {/* Room Base Image */}
-                  <img
-                    src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1000&q=85"
-                    alt="Modern living room painted with Accord Paints"
-                    className="w-full h-full object-cover"
-                  />
-
-                  {/* Dynamic Wall Color Overlay so users can test colors right on the Hero wall */}
-                  <div
-                    className="absolute inset-0 transition-colors duration-700 pointer-events-none"
-                    style={{
-                      backgroundColor: heroWallColor,
-                      mixBlendMode: 'multiply',
-                      opacity: 0.58,
-                    }}
-                  />
-
-                  {/* Paint Roller Action Strip on Upper-Right Wall (Matching Mockup) */}
-                  <div className="absolute top-0 right-12 w-24 h-28 pointer-events-none hidden sm:block">
-                    {/* Freshly rolled vertical swatch strip */}
-                    <div
-                      className="w-16 h-24 mx-auto opacity-90 rounded-b-sm shadow-inner transition-colors duration-500"
-                      style={{ backgroundColor: heroWallColor }}
-                    />
-                    {/* Roller Cylinder & Metal Arm */}
-                    <div className="relative -mt-2 flex items-center justify-center">
-                      <div
-                        className="w-16 h-4 rounded-full shadow-md border border-white/30"
-                        style={{ backgroundColor: heroWallColor }}
-                      />
-                      <div className="w-3 h-7 border-r-2 border-b-2 border-slate-300 rounded-br-md -ml-1 mt-3" />
-                    </div>
-                  </div>
-
-                  {/* Interactive Quick Wall Swatch Switcher Pill (Top-Left inside Hero photo) */}
-                  <div className="absolute top-3.5 left-3.5 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md flex items-center gap-2 border border-white/60">
-                    <span className="text-[11px] font-semibold text-[#142333] mr-0.5">
-                      {heroWallName}
-                    </span>
-                    {[
-                      { name: 'Terracotta Dream', hex: '#BC5B45' },
-                      { name: 'Forest Mist', hex: '#256666' },
-                      { name: 'Golden Hour', hex: '#D99B38' },
-                      { name: 'Deep Pine', hex: '#1B3254' },
-                    ].map((sw) => (
-                      <button
-                        key={sw.name}
-                        onClick={() => {
-                          setHeroWallColor(sw.hex);
-                          setHeroWallName(sw.name);
-                        }}
-                        title={`Preview ${sw.name}`}
-                        className={`w-4 h-4 rounded-full transition-transform ${
-                          heroWallColor === sw.hex
-                            ? 'scale-125 ring-2 ring-[#142333] ring-offset-1'
-                            : 'hover:scale-110 opacity-85'
-                        }`}
-                        style={{ backgroundColor: sw.hex }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Overlapping Accord Paints Bucket in Bottom-Right Corner */}
-                <div className="absolute -bottom-6 right-1 sm:right-2 w-28 sm:w-32 h-32 sm:h-36 z-20 pointer-events-none">
-                  <AccordPaintCan accentColor="#1B5153" />
-                </div>
+                {/* Interactive Clickable Area on Paint Can */}
+                <div
+                  onClick={() => {
+                    setCurrentView('product');
+                    window.location.hash = '#product';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  title="Click to view Flagship Product Details"
+                  className="absolute bottom-2 right-4 w-32 sm:w-36 h-36 sm:h-44 cursor-pointer rounded-2xl transition-transform hover:scale-105"
+                />
               </Reveal>
             </div>
           </div>
@@ -1219,138 +1207,17 @@ export default function App() {
       </section>
 
       {/* ==========================================
-          3. TRENDING COLORS FOR 2026 (OUR POPULAR PALETTES)
+          SIGNATURE PAINT COLLECTIONS & FLAGSHIP SPOTLIGHT
       ========================================== */}
-      <section
-        id="palettes"
-        className="w-full py-12 sm:py-16 relative"
-      >
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Column: Overlapping Typography + Tall Vertical Interior Photo */}
-            <div className="lg:col-span-5 relative flex items-center min-h-[300px] sm:min-h-[330px]">
-              {/* Left Editorial Text */}
-              <Reveal
-                direction="right"
-                className="relative z-20 w-[62%] sm:w-[58%] pr-2 pointer-events-none"
-              >
-                <p className="text-xs sm:text-[13px] font-medium text-slate-600 mb-1.5">
-                  Our Popular Palettes
-                </p>
-                <h2 className="font-serif-editorial text-3xl sm:text-4xl font-bold text-[#142333] leading-[1.12]">
-                  Trending Colors
-                  <br />
-                  for 2026
-                </h2>
-                <p className="mt-3 text-xs sm:text-[13.5px] text-slate-600 leading-relaxed max-w-[200px]">
-                  Trending shades of our modern collection curated to find your
-                  ideal color palette.
-                </p>
-              </Reveal>
+      <ProductsSection
+        onOpenProductDetail={() => {
+          setCurrentView('product');
+          window.location.hash = '#product';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onTriggerToast={triggerToast}
+      />
 
-              {/* Tall Vertical Rounded Room Image on the Right Half of Left Column */}
-              <div
-                className="w-[48%] sm:w-[46%] h-[280px] sm:h-[310px] ml-auto rounded-2xl overflow-hidden shadow-lg border border-slate-200/80 relative z-10"
-                style={{
-                  transform: `translate3d(0, ${Math.min(
-                    18,
-                    Math.max(-18, (scrollY - 350) * -0.04)
-                  )}px, 0)`,
-                }}
-              >
-                {/* Two-tone Teal & Terracotta Room Photo matching Mockup */}
-                <img
-                  src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=700&q=80"
-                  alt="Two-tone trending interior room"
-                  className="w-full h-full object-cover"
-                />
-                {/* Subtle right-side terracotta wall accent simulation to mirror the split wall in mockup */}
-                <div className="absolute top-0 bottom-12 right-0 w-1/3 bg-[#B85A43]/55 mix-blend-multiply pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Right Column: Carousel Controls + Swatch Cards */}
-            <div className="lg:col-span-7">
-              {/* Top-Right Carousel Navigation Buttons */}
-              <div className="flex justify-end items-center gap-2 mb-3">
-                <button
-                  onClick={() => scrollCarousel('left')}
-                  aria-label="Previous palette"
-                  className="w-7 h-7 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center shadow-xs transition-transform active:scale-90"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => scrollCarousel('right')}
-                  aria-label="Next palette"
-                  className="w-7 h-7 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center shadow-xs transition-transform active:scale-90"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Horizontal Scrollable Swatch Cards */}
-              <div
-                ref={carouselRef}
-                className="flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory"
-              >
-                {TRENDING_PALETTES.map((item, idx) => (
-                  <Reveal
-                    key={item.id}
-                    delay={idx * 80}
-                    direction="up"
-                    className="snap-start shrink-0 w-[148px] sm:w-[156px]"
-                  >
-                    <div
-                      onClick={() => handleCopyHex(item)}
-                      className="group bg-white rounded-2xl overflow-hidden shadow-[0_6px_24px_rgba(15,23,42,0.06)] hover:shadow-[0_14px_30px_rgba(15,23,42,0.13)] border border-slate-100 transition-all duration-300 hover:-translate-y-1.5 cursor-pointer flex flex-col"
-                    >
-                      {/* Top Solid Paint Swatch Block */}
-                      <div
-                        className="h-24 w-full relative transition-transform duration-300"
-                        style={{ backgroundColor: item.swatchHex }}
-                      >
-                        <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-black/20 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          {copiedCode === item.id ? (
-                            <Check className="w-3.5 h-3.5" />
-                          ) : (
-                            <Copy className="w-3 h-3" />
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Middle Swatch Name & Code */}
-                      <div className="px-3 pt-2.5 pb-2">
-                        <h3 className="font-bold text-xs sm:text-[13px] text-[#142333] truncate">
-                          {item.name}
-                        </h3>
-                        <p className="text-[10.5px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
-                          {item.code}
-                        </p>
-                      </div>
-
-                      {/* Bottom Room Thumbnail inside Card */}
-                      <div className="px-2.5 pb-2.5 mt-auto">
-                        <div className="h-16 w-full rounded-xl overflow-hidden relative">
-                          <img
-                            src={item.roomImage}
-                            alt={item.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                          <div
-                            className="absolute inset-0 opacity-30 mix-blend-multiply"
-                            style={{ backgroundColor: item.swatchHex }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </Reveal>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ==========================================
           4. VISUALIZER APP & VALUE PROPOSITION
@@ -1602,17 +1469,6 @@ export default function App() {
           7. FOOTER (DEEP MIDNIGHT NAVY)
       ========================================== */}
       <footer className="w-full bg-[#162637] text-white pt-14 pb-8 relative overflow-hidden mt-auto">
-        {/* Subtle Decorative 4-Point Star on Far Right (Matching Mockup) */}
-        <svg
-          viewBox="0 0 120 120"
-          fill="none"
-          className="w-28 h-28 absolute right-4 bottom-10 text-white/10 pointer-events-none select-none"
-        >
-          <path
-            d="M60 0C63 42 78 57 120 60C78 63 63 78 60 120C57 78 42 63 0 60C42 57 57 42 60 0Z"
-            fill="currentColor"
-          />
-        </svg>
 
         <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 relative z-10">
           <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-12 gap-8 pb-10 border-b border-white/10">
@@ -1685,16 +1541,42 @@ export default function App() {
                 Products
               </h4>
               <ul className="space-y-2 text-xs text-slate-300">
-                {['Interior', 'Exterior', 'Primers', 'Supplies'].map((link) => (
-                  <li key={link}>
-                    <button
-                      onClick={() => scrollToSection('palettes')}
-                      className="hover:text-white transition-colors"
-                    >
-                      {link}
-                    </button>
-                  </li>
-                ))}
+                <li>
+                  <button
+                    onClick={() => scrollToSection('products')}
+                    className="hover:text-white transition-colors"
+                  >
+                    Interior Emulsion
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => scrollToSection('products')}
+                    className="hover:text-white transition-colors"
+                  >
+                    Exterior WeatherShield
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => scrollToSection('products')}
+                    className="hover:text-white transition-colors"
+                  >
+                    Primers & Base Coats
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => {
+                      setCurrentView('product');
+                      window.location.hash = '#product';
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="hover:text-amber-300 font-semibold transition-colors"
+                  >
+                    Flagship Semi-Gloss ★
+                  </button>
+                </li>
               </ul>
             </div>
 
