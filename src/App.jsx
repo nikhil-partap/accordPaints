@@ -16,6 +16,7 @@ import {
   MoveHorizontal,
   Award,
   ShieldCheck,
+  ArrowRight,
 } from 'lucide-react';
 import ProductsSection from './ProductsSection';
 import ProductDetailPage from './ProductDetailPage';
@@ -839,6 +840,20 @@ export default function App() {
   const [currentView, setCurrentView] = useState(() => {
     return window.location.hash === '#product' ? 'product' : 'home';
   });
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  const navigateToProduct = (prod = null) => {
+    setSelectedProduct(prod);
+    setCurrentView('product');
+    window.location.hash = '#product';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToHome = () => {
+    setCurrentView('home');
+    window.location.hash = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const handleHash = () => {
@@ -929,11 +944,8 @@ export default function App() {
   if (currentView === 'product') {
     return (
       <ProductDetailPage
-        onBackToHome={() => {
-          setCurrentView('home');
-          window.location.hash = '';
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
+        product={selectedProduct}
+        onBackToHome={navigateToHome}
         onSelectColor={(item) => {
           setHeroWallColor(item.hex);
           setHeroWallName(item.name);
@@ -1001,9 +1013,9 @@ export default function App() {
                 <button
                   onClick={() => {
                     setProductsOpen(false);
-                    scrollToSection('products');
+                    navigateToProduct();
                   }}
-                  className="flex items-center gap-1 hover:text-[#0D4A52] transition-colors py-1"
+                  className="flex items-center gap-1 hover:text-[#0D4A52] transition-colors py-1 cursor-pointer"
                 >
                   <span>Products</span>
                   <ChevronDown
@@ -1015,44 +1027,91 @@ export default function App() {
 
                 {/* Dropdown Menu */}
                 {productsOpen && (
-                  <div className="absolute top-full left-0 pt-2 w-56 z-50">
+                  <div className="absolute top-full left-0 pt-2 w-64 z-50">
                     <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2.5 grid gap-1">
+                      {/* Flagship Product Showcase Button */}
+                      <button
+                        onClick={() => {
+                          setProductsOpen(false);
+                          navigateToProduct();
+                        }}
+                        className="w-full text-left bg-gradient-to-r from-[#0D4A52] to-[#182C49] text-white p-3 rounded-xl hover:shadow-md transition-all group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                            ★ Flagship Product Page
+                          </span>
+                          <ChevronRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                        <div className="text-xs font-bold text-white mt-0.5">
+                          Luxury Semi Gloss Emulsion
+                        </div>
+                        <div className="text-[10px] text-slate-200 mt-0.5 leading-tight">
+                          View full specifications, pack sizing & coverage calculator →
+                        </div>
+                      </button>
+
+                      <div className="h-px bg-slate-100 my-0.5" />
+
                       {[
                         {
                           title: 'Interior Paints',
-                          desc: 'Zero-VOC matte & eggshell',
+                          desc: 'Zero-VOC luxury semi-gloss & matte',
                           dot: '#256666',
+                          action: () => navigateToProduct(),
                         },
                         {
                           title: 'Exterior WeatherShield',
-                          desc: 'All-season UV durability',
+                          desc: 'Extreme rainfall & UV defense',
                           dot: '#182C49',
+                          action: () =>
+                            navigateToProduct({
+                              id: 'exterior-emulsion',
+                              name: 'Exterior WeatherShield Emulsion',
+                              series: 'Gold Series',
+                              category: 'Exterior Wall Care',
+                              tagline: 'Extreme weather, UV and heavy rainfall protection',
+                              sheen: 'Eggshell Weather-Proof',
+                              coverage: '110 - 130 sq.ft / Litre',
+                              dryingTime: '45 mins (Touch), 4-6 hrs (Recoat)',
+                              dilution: '40% with clean water',
+                              packSizes: ['1 L', '4 L', '10 L', '20 L'],
+                              image: '/images/products/exterior-emulsion.jpg',
+                            }),
                         },
                         {
                           title: 'One-Coat Primers',
-                          desc: 'High-adhesion base coats',
+                          desc: 'High-adhesion sealing base coats',
                           dot: '#EAB849',
+                          action: () => {
+                            setProductsOpen(false);
+                            scrollToSection('products');
+                          },
                         },
                         {
                           title: 'Brushes & Supplies',
-                          desc: 'Pro rollers, trays & tape',
+                          desc: 'Pro rollers, trays & painter tape',
                           dot: '#BE5C45',
+                          action: () => {
+                            setProductsOpen(false);
+                            scrollToSection('products');
+                          },
                         },
                       ].map((prod) => (
                         <button
                           key={prod.title}
                           onClick={() => {
                             setProductsOpen(false);
-                            scrollToSection('products');
+                            prod.action();
                           }}
-                          className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 text-left transition-colors"
+                          className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 text-left transition-colors group cursor-pointer"
                         >
                           <span
                             className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0"
                             style={{ backgroundColor: prod.dot }}
                           />
                           <div>
-                            <div className="text-xs font-semibold text-[#142333]">
+                            <div className="text-xs font-semibold text-[#142333] group-hover:text-[#0D4A52] transition-colors">
                               {prod.title}
                             </div>
                             <div className="text-[11px] text-slate-500">
@@ -1061,6 +1120,18 @@ export default function App() {
                           </div>
                         </button>
                       ))}
+
+                      <div className="pt-1 border-t border-slate-100 mt-0.5">
+                        <button
+                          onClick={() => {
+                            setProductsOpen(false);
+                            scrollToSection('products');
+                          }}
+                          className="w-full text-center py-1 text-[11px] font-semibold text-[#0D4A52] hover:text-[#09393F] hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                        >
+                          Browse All Product Collections ↓
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1131,15 +1202,28 @@ export default function App() {
                 <div className="mt-7 flex flex-wrap items-center gap-3.5">
                   <button
                     onClick={() => scrollToSection('products')}
-                    className="bg-[#0D4A52] hover:bg-[#09393F] text-white font-semibold text-xs sm:text-sm px-7 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-95"
+                    className="bg-[#0D4A52] hover:bg-[#09393F] text-white font-semibold text-xs sm:text-sm px-7 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer"
                   >
                     Explore Our Palette
                   </button>
                   <button
                     onClick={() => scrollToSection('visualizer')}
-                    className="bg-transparent hover:bg-slate-100/70 text-[#0D4A52] font-semibold text-xs sm:text-sm px-7 py-3 rounded-full border border-[#0D4A52] transition-all duration-200 active:scale-95"
+                    className="bg-transparent hover:bg-slate-100/70 text-[#0D4A52] font-semibold text-xs sm:text-sm px-7 py-3 rounded-full border border-[#0D4A52] transition-all duration-200 active:scale-95 cursor-pointer"
                   >
                     Try Visualizer
+                  </button>
+                </div>
+
+                {/* Direct Demo link to Flagship Product Page */}
+                <div className="mt-4 flex items-center gap-2 text-xs text-slate-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                  <span className="font-medium">Flagship Demo:</span>
+                  <button
+                    onClick={() => navigateToProduct()}
+                    className="text-[#0D4A52] hover:text-[#09393F] font-semibold underline underline-offset-2 flex items-center gap-1 group cursor-pointer"
+                  >
+                    <span>View Luxury Semi Gloss product page</span>
+                    <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                   </button>
                 </div>
               </Reveal>
@@ -1190,16 +1274,18 @@ export default function App() {
                   draggable={false}
                 />
 
-                {/* Interactive Clickable Area on Paint Can */}
+                {/* Interactive Clickable Area & Visual Badge on Paint Can */}
                 <div
-                  onClick={() => {
-                    setCurrentView('product');
-                    window.location.hash = '#product';
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
+                  onClick={() => navigateToProduct()}
                   title="Click to view Flagship Product Details"
-                  className="absolute bottom-2 right-4 w-32 sm:w-36 h-36 sm:h-44 cursor-pointer rounded-2xl transition-transform hover:scale-105"
-                />
+                  className="absolute bottom-2 right-4 w-36 sm:w-44 h-40 sm:h-48 cursor-pointer rounded-2xl flex items-end justify-center pb-2 z-20 group/can"
+                >
+                  <div className="bg-white/95 hover:bg-white text-[#142333] hover:text-[#0D4A52] px-3.5 py-1.5 rounded-full shadow-lg border border-white/90 flex items-center gap-2 text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>View Product Page</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#0D4A52] group-hover/can:translate-x-0.5 transition-transform" />
+                  </div>
+                </div>
               </Reveal>
             </div>
           </div>
@@ -1210,11 +1296,7 @@ export default function App() {
           SIGNATURE PAINT COLLECTIONS & FLAGSHIP SPOTLIGHT
       ========================================== */}
       <ProductsSection
-        onOpenProductDetail={() => {
-          setCurrentView('product');
-          window.location.hash = '#product';
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
+        onOpenProductDetail={(prod) => navigateToProduct(prod)}
         onTriggerToast={triggerToast}
       />
 
@@ -1543,16 +1625,39 @@ export default function App() {
               <ul className="space-y-2 text-xs text-slate-300">
                 <li>
                   <button
-                    onClick={() => scrollToSection('products')}
-                    className="hover:text-white transition-colors"
+                    onClick={() => navigateToProduct()}
+                    className="hover:text-amber-300 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer text-left"
                   >
-                    Interior Emulsion
+                    <span>Flagship Semi-Gloss ★</span>
+                    <span className="text-[9.5px] bg-amber-400/20 text-amber-300 px-1.5 py-0.2 rounded-full font-bold">New</span>
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={() => scrollToSection('products')}
-                    className="hover:text-white transition-colors"
+                    onClick={() => navigateToProduct()}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    Interior Luxury Emulsion
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() =>
+                      navigateToProduct({
+                        id: 'exterior-emulsion',
+                        name: 'Exterior WeatherShield Emulsion',
+                        series: 'Gold Series',
+                        category: 'Exterior Wall Care',
+                        tagline: 'Extreme weather, UV and heavy rainfall protection',
+                        sheen: 'Eggshell Weather-Proof',
+                        coverage: '110 - 130 sq.ft / Litre',
+                        dryingTime: '45 mins (Touch), 4-6 hrs (Recoat)',
+                        dilution: '40% with clean water',
+                        packSizes: ['1 L', '4 L', '10 L', '20 L'],
+                        image: '/images/products/exterior-emulsion.jpg',
+                      })
+                    }
+                    className="hover:text-white transition-colors cursor-pointer text-left"
                   >
                     Exterior WeatherShield
                   </button>
@@ -1560,21 +1665,17 @@ export default function App() {
                 <li>
                   <button
                     onClick={() => scrollToSection('products')}
-                    className="hover:text-white transition-colors"
+                    className="hover:text-white transition-colors cursor-pointer text-left"
                   >
                     Primers & Base Coats
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={() => {
-                      setCurrentView('product');
-                      window.location.hash = '#product';
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="hover:text-amber-300 font-semibold transition-colors"
+                    onClick={() => scrollToSection('products')}
+                    className="text-[#0AA6BB] hover:underline transition-colors cursor-pointer text-left"
                   >
-                    Flagship Semi-Gloss ★
+                    Browse All Catalog →
                   </button>
                 </li>
               </ul>

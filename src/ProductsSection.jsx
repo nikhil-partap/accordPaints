@@ -365,13 +365,14 @@ export default function ProductsSection({ onOpenProductDetail, onTriggerToast })
                 <img
                   src={prod.image}
                   alt={prod.name}
-                  className="h-44 w-auto object-contain drop-shadow-md transition-transform duration-500 group-hover:scale-105"
+                  onClick={() => onOpenProductDetail(prod)}
+                  className="h-44 w-auto object-contain drop-shadow-md transition-transform duration-500 group-hover:scale-105 cursor-pointer"
                 />
 
                 {/* Quick View Hover Pill */}
                 <button
                   onClick={() => setSelectedQuickView(prod)}
-                  className="absolute bottom-3 bg-white/95 hover:bg-white text-[#142333] text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-md border border-slate-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5"
+                  className="absolute bottom-3 bg-white/95 hover:bg-white text-[#142333] text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-md border border-slate-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 cursor-pointer"
                 >
                   <Eye className="w-3.5 h-3.5 text-[#1B5153]" />
                   <span>Quick Specs</span>
@@ -383,7 +384,10 @@ export default function ProductsSection({ onOpenProductDetail, onTriggerToast })
                 <div className="text-[11px] font-semibold text-[#1B5153] uppercase tracking-wider mb-1">
                   {prod.category}
                 </div>
-                <h3 className="font-bold text-base text-[#142333] leading-snug group-hover:text-[#1B5153] transition-colors">
+                <h3
+                  onClick={() => onOpenProductDetail(prod)}
+                  className="font-bold text-base text-[#142333] leading-snug group-hover:text-[#1B5153] transition-colors cursor-pointer"
+                >
                   {prod.name}
                 </h3>
                 <p className="mt-1 text-xs text-slate-500 leading-relaxed line-clamp-2">
@@ -406,30 +410,18 @@ export default function ProductsSection({ onOpenProductDetail, onTriggerToast })
                 <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                   <button
                     onClick={() => setSelectedQuickView(prod)}
-                    className="text-xs font-semibold text-slate-600 hover:text-[#1B5153] transition-colors py-1.5 px-2"
+                    className="text-xs font-semibold text-slate-600 hover:text-[#1B5153] transition-colors py-1.5 px-2 cursor-pointer"
                   >
                     View Specs
                   </button>
 
-                  {prod.isFlagship ? (
-                    <button
-                      onClick={() => onOpenProductDetail(prod)}
-                      className="bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xs transition-all active:scale-95 flex items-center gap-1"
-                    >
-                      <span>Product Page</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        onTriggerToast(`Selected ${prod.name} for dealer inquiry.`);
-                        setSelectedQuickView(prod);
-                      }}
-                      className="bg-slate-100 hover:bg-slate-200 text-[#142333] text-xs font-semibold px-3.5 py-2 rounded-full transition-colors flex items-center gap-1"
-                    >
-                      <span>Inquire</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={() => onOpenProductDetail(prod)}
+                    className="bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs font-semibold px-3.5 py-1.5 rounded-full shadow-xs transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Product Page</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -510,28 +502,26 @@ export default function ProductsSection({ onOpenProductDetail, onTriggerToast })
             </div>
 
             <div className="flex gap-3">
-              {selectedQuickView.isFlagship ? (
-                <button
-                  onClick={() => {
-                    const prod = selectedQuickView;
-                    setSelectedQuickView(null);
-                    onOpenProductDetail(prod);
-                  }}
-                  className="flex-1 bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs font-semibold py-2.5 rounded-full transition-all text-center"
-                >
-                  Go to Flagship Product Page →
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    onTriggerToast(`Inquiry sent for ${selectedQuickView.name}. We will contact you soon!`);
-                    setSelectedQuickView(null);
-                  }}
-                  className="flex-1 bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs font-semibold py-2.5 rounded-full transition-all text-center"
-                >
-                  Request Dealer Quote
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  const prod = selectedQuickView;
+                  setSelectedQuickView(null);
+                  onOpenProductDetail(prod);
+                }}
+                className="flex-1 bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs font-semibold py-2.5 rounded-full transition-all text-center flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+              >
+                <span>Open Full Product Page</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => {
+                  onTriggerToast(`Inquiry sent for ${selectedQuickView.name}. An Accord Paints dealer will contact you.`);
+                  setSelectedQuickView(null);
+                }}
+                className="bg-slate-100 hover:bg-slate-200 text-[#142333] text-xs font-semibold px-4 py-2.5 rounded-full transition-colors cursor-pointer"
+              >
+                Inquire
+              </button>
             </div>
           </div>
         </div>

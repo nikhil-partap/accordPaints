@@ -14,7 +14,22 @@ import {
   Star,
 } from 'lucide-react';
 
-export default function ProductDetailPage({ onBackToHome, onSelectColor }) {
+export default function ProductDetailPage({ product, onBackToHome, onSelectColor }) {
+  const currentProduct = product || {
+    id: 'luxury-semi-gloss',
+    name: 'Luxury Semi Gloss Emulsion',
+    series: 'Platinum Series',
+    category: 'Interior & Exterior Wall Protection',
+    isFlagship: true,
+    tagline: 'Refined soft sheen finish with 10-year surface durability',
+    sheen: 'Semi-Gloss (35-45% Gloss)',
+    coverage: '140 – 160 sq.ft per Litre',
+    dryingTime: '30 mins (Touch), 4 hrs (Recoat)',
+    dilution: '40-50% with clean water',
+    packSizes: ['1 L', '4 L', '10 L', '20 L'],
+    image: '/images/products/luxury-semi-gloss-emulsion.jpg',
+  };
+
   const [selectedPack, setSelectedPack] = useState('4 L');
   const [roomArea, setRoomArea] = useState(350);
   const [activeTab, setActiveTab] = useState('specs'); // 'specs' | 'application' | 'finishes' | 'safety'
@@ -37,18 +52,18 @@ export default function ProductDetailPage({ onBackToHome, onSelectColor }) {
   ];
 
   const techSpecs = [
-    { label: 'Product Code', value: 'AP-PLT-9941' },
+    { label: 'Product Code', value: currentProduct.id === 'luxury-semi-gloss' ? 'AP-PLT-9941' : `AP-${(currentProduct.id || 'PROD').toUpperCase().slice(0, 8)}` },
     { label: 'Base Resin', value: '100% Pure Acrylic Copolymer' },
-    { label: 'Sheen Level', value: 'Semi-Gloss (35 - 45% at 60° angle)' },
-    { label: 'Coverage (2 Coats)', value: '140 – 160 sq.ft per Litre' },
-    { label: 'Touch Dry Time', value: '25 – 35 minutes @ 30°C' },
-    { label: 'Recoat Interval', value: '3 – 4 hours' },
+    { label: 'Sheen Level', value: currentProduct.sheen || 'Semi-Gloss (35 - 45% at 60° angle)' },
+    { label: 'Coverage (2 Coats)', value: currentProduct.coverage || '140 – 160 sq.ft per Litre' },
+    { label: 'Touch Dry Time', value: currentProduct.dryingTime ? currentProduct.dryingTime.split(',')[0] : '25 – 35 minutes @ 30°C' },
+    { label: 'Recoat Interval', value: currentProduct.dryingTime && currentProduct.dryingTime.includes('Recoat') ? currentProduct.dryingTime.split(',')[1] : '3 – 4 hours' },
     { label: 'VOC Content', value: '< 12 g/L (Ultra Low VOC Eco-Standard)' },
     { label: 'Washability', value: 'Class 1 Scrub Resistance (> 10,000 scrubs)' },
-    { label: 'Dilution Ratio', value: '40% – 50% clean municipal water' },
+    { label: 'Dilution Ratio', value: currentProduct.dilution || '40% – 50% clean municipal water' },
     { label: 'Flash Point', value: 'Non-Flammable (Water-based)' },
     { label: 'Recommended Undercoat', value: 'Accord Water Thinnable Cement Primer' },
-    { label: 'Warranty', value: '10-Year Film Integrity & Peel Guarantee' },
+    { label: 'Warranty', value: currentProduct.series?.includes('Platinum') ? '10-Year Film Integrity & Peel Guarantee' : '7-Year Film Integrity & Peel Guarantee' },
   ];
 
   const suggestedPalettes = [
@@ -71,17 +86,26 @@ export default function ProductDetailPage({ onBackToHome, onSelectColor }) {
       {/* Top Banner Navigation */}
       <div className="sticky top-0 z-40 bg-[#FAF9F5]/90 backdrop-blur-md border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-5 sm:px-8 py-3.5 flex items-center justify-between">
-          <button
-            onClick={onBackToHome}
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#142333] hover:text-[#1B5153] transition-colors py-1.5 px-3 rounded-full hover:bg-slate-200/50"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Landing Page</span>
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onBackToHome}
+              className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#142333] hover:text-[#1B5153] transition-colors py-1.5 px-3 rounded-full hover:bg-slate-200/50 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Landing Page</span>
+            </button>
+            <div className="h-4 w-px bg-slate-300 hidden sm:block" />
+            <img
+              src="/images/brand/accord-logo-mockup.png"
+              alt="Accord Paints"
+              onClick={onBackToHome}
+              className="h-6 w-auto cursor-pointer hover:opacity-80 transition-opacity hidden sm:block"
+            />
+          </div>
 
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline-block text-xs font-semibold px-3 py-1 rounded-full bg-[#E4EEEE] text-[#1B5153]">
-              Platinum Series • Flagship
+              {currentProduct.series || 'Platinum Series'} • {currentProduct.isFlagship ? 'Flagship Demo' : 'Official Product'}
             </span>
             <button
               onClick={() => {
@@ -90,7 +114,7 @@ export default function ProductDetailPage({ onBackToHome, onSelectColor }) {
                   triggerToast('Product link copied to clipboard!');
                 }
               }}
-              className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-white transition-colors"
+              className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-white transition-colors cursor-pointer"
               title="Share Product"
             >
               <Share2 className="w-3.5 h-3.5" />
@@ -103,13 +127,13 @@ export default function ProductDetailPage({ onBackToHome, onSelectColor }) {
       <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-8 sm:py-12">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-slate-500 mb-6">
-          <button onClick={onBackToHome} className="hover:underline">Home</button>
+          <button onClick={onBackToHome} className="hover:underline cursor-pointer">Home</button>
           <span>/</span>
-          <span>Products</span>
+          <button onClick={onBackToHome} className="hover:underline cursor-pointer">Products</button>
           <span>/</span>
-          <span>Emulsion Paints</span>
+          <span>{currentProduct.category || 'Emulsion Paints'}</span>
           <span>/</span>
-          <span className="text-[#142333] font-semibold">Luxury Semi Gloss Emulsion</span>
+          <span className="text-[#142333] font-semibold">{currentProduct.name}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
@@ -123,7 +147,7 @@ export default function ProductDetailPage({ onBackToHome, onSelectColor }) {
               {/* Series Badge Floating Top-Left */}
               <div className="absolute top-5 left-5 bg-[#1B5153] text-white text-[11px] font-bold tracking-wider uppercase px-3 py-1 rounded-full shadow-md flex items-center gap-1.5">
                 <Award className="w-3.5 h-3.5 text-amber-300" />
-                Platinum Flagship
+                {currentProduct.series || 'Platinum Series'}
               </div>
 
               {/* Eco Star Badge Top-Right */}
@@ -134,15 +158,15 @@ export default function ProductDetailPage({ onBackToHome, onSelectColor }) {
 
               {/* Bucket Photo with Realistic Drop Shadow & Hover Zoom */}
               <img
-                src="/images/products/luxury-semi-gloss-emulsion.jpg"
-                alt="Accord Platinum Luxury Semi Gloss Emulsion Bucket"
+                src={currentProduct.image || "/images/products/luxury-semi-gloss-emulsion.jpg"}
+                alt={currentProduct.name}
                 className="w-full max-w-[340px] sm:max-w-[400px] h-auto object-contain drop-shadow-[0_20px_35px_rgba(15,23,42,0.25)] transition-transform duration-500 group-hover:scale-105"
               />
 
               {/* Bottom Subtle Sheen Strip */}
               <div className="absolute bottom-4 inset-x-8 bg-white/80 backdrop-blur-md rounded-2xl p-2.5 border border-white/60 flex items-center justify-between text-xs text-slate-700">
                 <span className="font-semibold text-[#142333]">Sheen Level:</span>
-                <span className="text-[#1B5153] font-bold">Semi-Gloss (40% Soft Luster)</span>
+                <span className="text-[#1B5153] font-bold">{currentProduct.sheen || 'Semi-Gloss (40% Soft Luster)'}</span>
                 <span className="text-[11px] text-slate-500">Washable Finish</span>
               </div>
             </div>
@@ -187,16 +211,14 @@ export default function ProductDetailPage({ onBackToHome, onSelectColor }) {
               </div>
 
               <h1 className="font-serif-editorial text-3xl sm:text-4xl font-bold text-[#142333] leading-tight">
-                Luxury Semi Gloss Emulsion
+                {currentProduct.name}
               </h1>
               <p className="mt-1 text-xs sm:text-sm font-semibold text-slate-500">
-                Platinum Series • Interior & Exterior Wall Protection
+                {currentProduct.series || 'Platinum Series'} • {currentProduct.category || 'Interior & Exterior Wall Protection'}
               </p>
 
               <p className="mt-3.5 text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Engineered with high-grade pure acrylic resin and anti-bacterial agents, Accord’s
-                flagship Luxury Semi Gloss delivers an opulent pearl luster finish. Highly washable
-                and fortified against scuffs, stains, and moisture in busy households and architect-designed spaces.
+                {currentProduct.tagline || 'Engineered with high-grade pure acrylic resin and anti-bacterial agents, Accord’s flagship Luxury Semi Gloss delivers an opulent pearl luster finish. Highly washable and fortified against scuffs, stains, and moisture in busy households and architect-designed spaces.'}
               </p>
             </div>
 
