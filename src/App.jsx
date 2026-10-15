@@ -15,6 +15,7 @@ import {
   Upload,
   MoveHorizontal,
 } from 'lucide-react';
+import ProductPage from './ProductPage.jsx';
 
 const Instagram = ({ className = 'w-3.5 h-3.5' }) => (
   <svg
@@ -831,6 +832,32 @@ function BeforeAfterCard({ item }) {
 export default function App() {
   const { scrollY, scrollProgress } = useScrollMetrics();
 
+  // Page routing state ('product' by default for immediate preview, or 'home')
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#home') {
+      return 'home';
+    }
+    return 'product';
+  });
+
+  const navigateTo = (page) => {
+    setCurrentPage(page);
+    window.location.hash = page === 'home' ? 'home' : 'product';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash === '#home') {
+        setCurrentPage('home');
+      } else if (window.location.hash === '#product') {
+        setCurrentPage('product');
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
   // Interactive Hero wall tint state
   const [heroWallColor, setHeroWallColor] = useState('#BC5B45');
   const [heroWallName, setHeroWallName] = useState('Terracotta Dream');
@@ -944,6 +971,10 @@ export default function App() {
             {/* Brand Logo */}
             <a
               href="#top"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateTo('home');
+              }}
               className="flex items-center gap-2.5 group focus:outline-none"
             >
               <AccordLogo className="w-8 h-8 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-105" />
@@ -953,7 +984,33 @@ export default function App() {
             </a>
 
             {/* Center Nav Links */}
-            <nav className="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-slate-700">
+            <nav className="hidden md:flex items-center gap-6 text-[13.5px] font-medium text-slate-700">
+              <button
+                onClick={() => navigateTo('home')}
+                className={`transition-colors py-1 ${
+                  currentPage === 'home'
+                    ? 'text-[#1B5153] font-bold'
+                    : 'hover:text-[#1B5153]'
+                }`}
+              >
+                Home
+              </button>
+
+              {/* Accord Royale Product Button */}
+              <button
+                onClick={() => navigateTo('product')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  currentPage === 'product'
+                    ? 'bg-[#1B5153] text-white shadow-xs'
+                    : 'bg-[#FAF7F0] text-[#8C5D1E] border border-[#E8DEC8] hover:bg-[#F2ECE0]'
+                }`}
+              >
+                <span>Accord Royale</span>
+                <span className="text-[9px] uppercase tracking-wider bg-[#C08A3E] text-white px-1.5 py-0.2 rounded-full">
+                  Luxury
+                </span>
+              </button>
+
               <div
                 className="relative"
                 onMouseEnter={() => setProductsOpen(true)}
@@ -973,45 +1030,77 @@ export default function App() {
 
                 {/* Dropdown Menu */}
                 {productsOpen && (
-                  <div className="absolute top-full left-0 pt-2 w-56 z-50">
+                  <div className="absolute top-full left-0 pt-2 w-64 z-50">
                     <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2.5 grid gap-1">
                       {[
+                        {
+                          title: 'Accord Royale Matte',
+                          desc: 'Flagship velvet interior matte',
+                          dot: '#C08A3E',
+                          badge: 'Top Choice',
+                          action: () => {
+                            setProductsOpen(false);
+                            navigateTo('product');
+                          },
+                        },
                         {
                           title: 'Interior Paints',
                           desc: 'Zero-VOC matte & eggshell',
                           dot: '#256666',
+                          action: () => {
+                            setProductsOpen(false);
+                            navigateTo('home');
+                            setTimeout(() => scrollToSection('palettes'), 150);
+                          },
                         },
                         {
                           title: 'Exterior WeatherShield',
                           desc: 'All-season UV durability',
                           dot: '#182C49',
+                          action: () => {
+                            setProductsOpen(false);
+                            navigateTo('home');
+                            setTimeout(() => scrollToSection('palettes'), 150);
+                          },
                         },
                         {
                           title: 'One-Coat Primers',
                           desc: 'High-adhesion base coats',
                           dot: '#EAB849',
+                          action: () => {
+                            setProductsOpen(false);
+                            navigateTo('home');
+                            setTimeout(() => scrollToSection('palettes'), 150);
+                          },
                         },
                         {
                           title: 'Brushes & Supplies',
                           desc: 'Pro rollers, trays & tape',
                           dot: '#BE5C45',
+                          action: () => {
+                            setProductsOpen(false);
+                            navigateTo('home');
+                            setTimeout(() => scrollToSection('palettes'), 150);
+                          },
                         },
                       ].map((prod) => (
                         <button
                           key={prod.title}
-                          onClick={() => {
-                            setProductsOpen(false);
-                            scrollToSection('palettes');
-                          }}
+                          onClick={prod.action}
                           className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 text-left transition-colors"
                         >
                           <span
                             className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0"
                             style={{ backgroundColor: prod.dot }}
                           />
-                          <div>
-                            <div className="text-xs font-semibold text-[#142333]">
-                              {prod.title}
+                          <div className="flex-1">
+                            <div className="text-xs font-semibold text-[#142333] flex items-center justify-between">
+                              <span>{prod.title}</span>
+                              {prod.badge && (
+                                <span className="text-[9px] font-bold bg-[#C08A3E] text-white px-1.5 py-0.2 rounded-full uppercase">
+                                  {prod.badge}
+                                </span>
+                              )}
                             </div>
                             <div className="text-[11px] text-slate-500">
                               {prod.desc}
@@ -1025,7 +1114,10 @@ export default function App() {
               </div>
 
               <button
-                onClick={() => scrollToSection('palettes')}
+                onClick={() => {
+                  navigateTo('home');
+                  setTimeout(() => scrollToSection('palettes'), 150);
+                }}
                 className="hover:text-[#1B5153] transition-colors"
               >
                 Color Inspiration
@@ -1039,7 +1131,10 @@ export default function App() {
                 Find a Store
               </button>
               <button
-                onClick={() => scrollToSection('transformations')}
+                onClick={() => {
+                  navigateTo('home');
+                  setTimeout(() => scrollToSection('transformations'), 150);
+                }}
                 className="hover:text-[#1B5153] transition-colors"
               >
                 Get Inspired
@@ -1048,13 +1143,30 @@ export default function App() {
 
             {/* Right CTA Button */}
             <button
-              onClick={() => scrollToSection('visualizer')}
+              onClick={() => {
+                navigateTo('home');
+                setTimeout(() => scrollToSection('visualizer'), 150);
+              }}
               className="bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs sm:text-[13px] font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow transition-all duration-200 active:scale-95"
             >
               Visualizer App
             </button>
         </div>
       </header>
+
+      {/* ==========================================
+          CONDITIONAL ROUTING: PRODUCT PAGE vs HOME
+      ========================================== */}
+      {currentPage === 'product' ? (
+        <ProductPage
+          onNavigateHome={() => navigateTo('home')}
+          onLaunchVisualizer={() => {
+            navigateTo('home');
+            setTimeout(() => scrollToSection('visualizer'), 250);
+          }}
+        />
+      ) : (
+        <main>
 
       {/* ==========================================
           2. HERO SECTION
@@ -1597,6 +1709,8 @@ export default function App() {
           </div>
         </div>
       </section>
+      </main>
+      )}
 
       {/* ==========================================
           7. FOOTER (DEEP MIDNIGHT NAVY)
@@ -1685,10 +1799,24 @@ export default function App() {
                 Products
               </h4>
               <ul className="space-y-2 text-xs text-slate-300">
+                <li>
+                  <button
+                    onClick={() => navigateTo('product')}
+                    className="text-[#EAB849] hover:underline font-semibold flex items-center gap-1.5"
+                  >
+                    <span>Accord Royale Matte</span>
+                    <span className="text-[9px] bg-[#C08A3E]/40 px-1 py-0.2 rounded text-white uppercase">
+                      Top
+                    </span>
+                  </button>
+                </li>
                 {['Interior', 'Exterior', 'Primers', 'Supplies'].map((link) => (
                   <li key={link}>
                     <button
-                      onClick={() => scrollToSection('palettes')}
+                      onClick={() => {
+                        navigateTo('home');
+                        setTimeout(() => scrollToSection('palettes'), 150);
+                      }}
                       className="hover:text-white transition-colors"
                     >
                       {link}
