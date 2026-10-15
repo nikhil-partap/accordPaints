@@ -1268,7 +1268,7 @@ export default function App() {
               >
                 {/* Authentic Mockup Visual with Painterly Acrylic Strokes, Living Room & Accord Paint Tin */}
                 <img
-                  src="/images/brand/hero-mockup-transparent.png"
+                  src="/images/brand/hero-mockup-transparent~2.png"
                   alt="Accord Paints Designer Living Room and Color Palette"
                   className="w-full h-auto object-contain select-none transition-transform duration-500 hover:scale-[1.015]"
                   draggable={false}
