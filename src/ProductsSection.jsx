@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
 import {
-  Sparkles,
-  ShieldCheck,
   Award,
   ChevronRight,
   Eye,
-  CheckCircle2,
-  Droplets,
   ArrowRight,
   X,
-  FileText,
 } from 'lucide-react';
 import { ACCORD_PRODUCTS } from './data/products';
 

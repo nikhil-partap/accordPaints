@@ -319,10 +319,10 @@ export default function ProductDetailPage({ product, onBackToHome, onSelectColor
                   triggerToast('Quote requested! An Accord Paints technical dealer will contact you.');
                   setQuoteSubmitted(true);
                 }}
-                className="flex-1 bg-[#1B5153] hover:bg-[#133C3E] text-white font-semibold text-xs sm:text-sm py-3 px-6 rounded-full shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                className={`flex-1 ${quoteSubmitted ? 'bg-emerald-700' : 'bg-[#1B5153] hover:bg-[#133C3E]'} text-white font-semibold text-xs sm:text-sm py-3 px-6 rounded-full shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2`}
               >
-                <PhoneCall className="w-4 h-4" />
-                <span>Request Dealer Quote & Samples</span>
+                {quoteSubmitted ? <CheckCircle2 className="w-4 h-4" /> : <PhoneCall className="w-4 h-4" />}
+                <span>{quoteSubmitted ? 'Quote Requested! Dealer In Touch Soon' : 'Request Dealer Quote & Samples'}</span>
               </button>
 
               <button

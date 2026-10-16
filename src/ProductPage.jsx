@@ -1,23 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ChevronRight,
-  ChevronDown,
   Check,
-  Sparkles,
   Camera,
   Play,
   X,
-  Droplets,
-  Layers,
-  ShieldCheck,
   SlidersHorizontal,
-  ArrowRight,
   Upload,
   FileText,
-  Star,
   RotateCcw,
-  Maximize2,
-  Info,
 } from 'lucide-react';
 
 // ==========================================
@@ -1215,22 +1205,35 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-slate-200">
-              <button
-                onClick={() => setVisualizerModalOpen(false)}
-                className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-4 py-2 cursor-pointer"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  setVisualizerModalOpen(false);
-                  triggerToast(`AR preview applied with ${activePalette.name}!`);
-                }}
-                className="bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs font-semibold px-5 py-2.5 rounded-full cursor-pointer shadow-sm"
-              >
-                Done
-              </button>
+            <div className="flex items-center justify-between gap-3 pt-4 mt-2 border-t border-slate-200">
+              {onLaunchVisualizer ? (
+                <button
+                  onClick={() => {
+                    setVisualizerModalOpen(false);
+                    onLaunchVisualizer();
+                  }}
+                  className="text-xs font-semibold text-[#1B5153] hover:underline cursor-pointer"
+                >
+                  Open Studio Visualizer →
+                </button>
+              ) : <div />}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setVisualizerModalOpen(false)}
+                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-4 py-2 cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    setVisualizerModalOpen(false);
+                    triggerToast(`AR preview applied with ${activePalette.name}!`);
+                  }}
+                  className="bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs font-semibold px-5 py-2.5 rounded-full cursor-pointer shadow-sm"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -1,21 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   Leaf,
   Palette,
-  CheckCircle2,
   Sparkles,
   Droplets,
   HeartHandshake,
-  Copy,
-  Check,
   X,
   Menu,
   Upload,
   MoveHorizontal,
-  Award,
   ShieldCheck,
   ArrowRight,
 } from 'lucide-react';
@@ -193,194 +188,6 @@ const AccordLogo = ({ className = 'w-8 h-8' }) => (
       d="M14.5 29.5L33.5 24.5L36.5 31.5L11.5 36.5L14.5 29.5Z"
       fill="#2D85C5"
     />
-  </svg>
-);
-
-const HeroBrushStrokes = ({ scrollY, mousePos }) => {
-  const offsetX = mousePos.x * 10;
-  const offsetY = mousePos.y * 10 - scrollY * 0.04;
-
-  return (
-    <svg
-      viewBox="0 0 700 620"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="absolute -inset-10 sm:-inset-14 w-[118%] h-[118%] pointer-events-none select-none z-0"
-      style={{
-        transform: `translate3d(${offsetX}px, ${offsetY}px, 0)`,
-        transition: 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
-      }}
-    >
-      {/* Top Teal Brush Splash */}
-      <path
-        d="M265 62C330 20 420 12 478 24C490 27 480 42 465 48C410 70 315 95 250 105C235 107 245 75 265 62Z"
-        fill="#2A6F71"
-        opacity="0.92"
-      />
-      <path
-        d="M295 42C365 8 440 5 495 18"
-        stroke="#1B5153"
-        strokeWidth="8"
-        strokeLinecap="round"
-        strokeDasharray="120 14"
-      />
-
-      {/* Top-Right Terracotta Stroke */}
-      <path
-        d="M415 55C485 18 555 15 602 35C618 42 595 72 575 82C510 114 445 120 395 110Z"
-        fill="#C9644C"
-        opacity="0.9"
-      />
-
-      {/* Left Deep Teal & Coral Angled Strokes */}
-      <path
-        d="M32 238C58 190 120 165 170 165L160 275C105 280 55 290 20 278C10 274 20 258 32 238Z"
-        fill="#1E6265"
-      />
-      <path
-        d="M15 355C52 302 115 268 175 260L170 375C110 385 58 412 18 402C4 398 4 372 15 355Z"
-        fill="#D2694E"
-      />
-      {/* Subtle dry-brush lines on left */}
-      <path
-        d="M34 218C72 182 118 168 156 164"
-        stroke="#1B5153"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M12 385C55 342 108 320 155 312"
-        stroke="#B8523B"
-        strokeWidth="5"
-        strokeLinecap="round"
-      />
-
-      {/* Right Golden Hour Yellow Splash */}
-      <path
-        d="M555 215C605 182 652 175 685 190C696 196 682 230 668 250C645 275 678 288 688 308C695 322 655 368 615 390C575 412 535 410 525 390L555 215Z"
-        fill="#F1C453"
-        opacity="0.92"
-      />
-      <path
-        d="M570 195C615 168 655 162 682 174"
-        stroke="#E4AF3A"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-
-      {/* Right Deep Navy Brush Stroke */}
-      <path
-        d="M545 410C595 375 645 362 678 378C690 384 672 422 645 445C605 478 558 492 525 485L545 410Z"
-        fill="#1B3052"
-      />
-
-      {/* Bottom Sweeping Navy & Gold Strokes */}
-      <path
-        d="M365 535C428 492 505 475 558 492C572 496 552 535 512 562C462 595 398 608 352 596C338 592 345 550 365 535Z"
-        fill="#243C64"
-        opacity="0.92"
-      />
-      <path
-        d="M342 548C395 512 455 498 495 508"
-        stroke="#E6B84C"
-        strokeWidth="12"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-};
-
-const AccordPaintCan = ({ accentColor = '#1B5153' }) => (
-  <svg
-    viewBox="0 0 150 165"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-full h-full drop-shadow-xl"
-  >
-    {/* Ground shadow */}
-    <ellipse cx="76" cy="152" rx="54" ry="9" fill="#0F172A" opacity="0.24" />
-    {/* Wire Handle */}
-    <path
-      d="M22 48C10 68 12 96 28 110"
-      stroke="#94A3B8"
-      strokeWidth="3.5"
-      strokeLinecap="round"
-    />
-    {/* Can Body Cylinder */}
-    <path
-      d="M24 34H128L121 142C121 149 101 154 76 154C51 154 31 149 31 142L24 34Z"
-      fill="url(#canBodyGrad)"
-      stroke="#CBD5E1"
-      strokeWidth="1.5"
-    />
-    {/* Dark Teal Label Center */}
-    <path
-      d="M27 56C52 62 100 62 125 56L121 128C98 134 54 134 31 128L27 56Z"
-      fill={accentColor}
-    />
-    {/* White Top Paint Drip on Can */}
-    <path
-      d="M25 36C45 41 105 41 127 36L126 52C115 54 108 68 102 68C96 68 95 52 86 52C78 52 76 62 70 62C64 62 62 49 48 50C36 51 32 56 26 53L25 36Z"
-      fill="#F8FAFC"
-    />
-    {/* Metallic Rim Top */}
-    <ellipse
-      cx="76"
-      cy="34"
-      rx="53"
-      ry="11"
-      fill="#E2E8F0"
-      stroke="#94A3B8"
-      strokeWidth="2"
-    />
-    <ellipse
-      cx="76"
-      cy="34"
-      rx="46"
-      ry="8"
-      fill="#BC5B45"
-      stroke="#CBD5E1"
-      strokeWidth="1.5"
-    />
-    {/* Metallic Bottom Rim */}
-    <path
-      d="M31 141C45 148 107 148 121 141"
-      stroke="#94A3B8"
-      strokeWidth="4"
-      strokeLinecap="round"
-    />
-    {/* Label Text */}
-    <text
-      x="76"
-      y="88"
-      textAnchor="middle"
-      fill="#FFFFFF"
-      fontFamily="Plus Jakarta Sans, sans-serif"
-      fontWeight="700"
-      fontSize="13.5"
-      letterSpacing="0.02em"
-    >
-      Accord
-    </text>
-    <text
-      x="76"
-      y="104"
-      textAnchor="middle"
-      fill="#E2E8F0"
-      fontFamily="Plus Jakarta Sans, sans-serif"
-      fontWeight="600"
-      fontSize="12.5"
-    >
-      Paints
-    </text>
-    <defs>
-      <linearGradient id="canBodyGrad" x1="24" y1="90" x2="128" y2="90" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor="#E2E8F0" />
-        <stop offset="25%" stopColor="#FFFFFF" />
-        <stop offset="75%" stopColor="#F1F5F9" />
-        <stop offset="100%" stopColor="#CBD5E1" />
-      </linearGradient>
-    </defs>
   </svg>
 );
 
@@ -833,53 +640,56 @@ function BeforeAfterCard({ item }) {
 }
 
 // ==========================================
+// ROUTE PARSER HELPER
+// ==========================================
+
+function parseRouteFromLocation() {
+  const path = window.location.pathname.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+  const search = window.location.search.toLowerCase();
+
+  const isRoyaleRoute = hash.includes('royale') || path.includes('royale');
+  const isProductRoute =
+    isRoyaleRoute ||
+    path.startsWith('/product') ||
+    path.startsWith('/products') ||
+    path.startsWith('/all-products') ||
+    hash.startsWith('#product') ||
+    hash.startsWith('#products') ||
+    hash.startsWith('#product-detail') ||
+    hash.startsWith('#all-products') ||
+    search.includes('view=product') ||
+    search.includes('page=product');
+
+  let prod = null;
+  if (isRoyaleRoute) {
+    prod = { id: 'accord-royale', name: 'Accord Royale Matte' };
+  } else if (isProductRoute) {
+    const pathParts = path.split('/').filter(Boolean);
+    if (pathParts.length > 1 && pathParts[1] && pathParts[1] !== 'detail') {
+      prod = getProductById(pathParts[1]);
+    }
+    if (!prod && hash.includes('/')) {
+      const hashId = hash.split('/')[1];
+      if (hashId) prod = getProductById(hashId);
+    } else if (!prod && hash.includes('=')) {
+      const hashId = hash.split('=')[1];
+      if (hashId) prod = getProductById(hashId);
+    }
+    if (!prod) {
+      prod = ACCORD_PRODUCTS[0];
+    }
+  }
+
+  return { isProduct: isProductRoute, product: prod, isRoyale: isRoyaleRoute };
+}
+
+// ==========================================
 // MAIN APPLICATION COMPONENT
 // ==========================================
 
 export default function App() {
   const { scrollY, scrollProgress } = useScrollMetrics();
-
-  // Helper to parse route from pathname, hash, or query parameters
-  const parseRouteFromLocation = () => {
-    const path = window.location.pathname.toLowerCase();
-    const hash = window.location.hash.toLowerCase();
-    const search = window.location.search.toLowerCase();
-
-    const isRoyaleRoute = hash.includes('royale') || path.includes('royale');
-    const isProductRoute =
-      isRoyaleRoute ||
-      path.startsWith('/product') ||
-      path.startsWith('/products') ||
-      path.startsWith('/all-products') ||
-      hash.startsWith('#product') ||
-      hash.startsWith('#products') ||
-      hash.startsWith('#product-detail') ||
-      hash.startsWith('#all-products') ||
-      search.includes('view=product') ||
-      search.includes('page=product');
-
-    let prod = null;
-    if (isRoyaleRoute) {
-      prod = { id: 'accord-royale', name: 'Accord Royale Matte' };
-    } else if (isProductRoute) {
-      const pathParts = path.split('/').filter(Boolean);
-      if (pathParts.length > 1 && pathParts[1] && pathParts[1] !== 'detail') {
-        prod = getProductById(pathParts[1]);
-      }
-      if (!prod && hash.includes('/')) {
-        const hashId = hash.split('/')[1];
-        if (hashId) prod = getProductById(hashId);
-      } else if (!prod && hash.includes('=')) {
-        const hashId = hash.split('=')[1];
-        if (hashId) prod = getProductById(hashId);
-      }
-      if (!prod) {
-        prod = ACCORD_PRODUCTS[0];
-      }
-    }
-
-    return { isProduct: isProductRoute, product: prod, isRoyale: isRoyaleRoute };
-  };
 
   const initialRoute = parseRouteFromLocation();
   // Active view: 'home' | 'product' | 'royale'
@@ -942,15 +752,9 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Interactive Hero wall tint state
   const [heroWallColor, setHeroWallColor] = useState('#BC5B45');
-  const [heroWallName, setHeroWallName] = useState('Terracotta Dream');
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   // Header dropdown
   const [productsOpen, setProductsOpen] = useState(false);
-
-  // Trending carousel ref & state
-  const carouselRef = useRef(null);
-  const [copiedCode, setCopiedCode] = useState(null);
 
   // Visualizer App state
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
@@ -979,25 +783,13 @@ export default function App() {
   };
 
   const handleCopyHex = (item) => {
-    setCopiedCode(item.id);
     setHeroWallColor(item.swatchHex);
-    setHeroWallName(item.name);
     if (navigator.clipboard) {
       navigator.clipboard.writeText(item.swatchHex).catch(() => {});
     }
     triggerToast(
       `Applied "${item.name}" (${item.code}) to Hero room preview!`
     );
-    setTimeout(() => setCopiedCode(null), 2000);
-  };
-
-  const scrollCarousel = (dir) => {
-    if (!carouselRef.current) return;
-    const scrollAmount = 220;
-    carouselRef.current.scrollBy({
-      left: dir === 'left' ? -scrollAmount : scrollAmount,
-      behavior: 'smooth',
-    });
   };
 
   const scrollToSection = (id) => {
@@ -1005,13 +797,6 @@ export default function App() {
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  };
-
-  const handleHeroMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setMousePos({ x, y });
   };
 
   if (currentView === 'royale' || (currentView === 'product' && selectedProduct?.id === 'accord-royale')) {
@@ -1362,7 +1147,6 @@ export default function App() {
       ========================================== */}
       <section
         id="top"
-        onMouseMove={handleHeroMouseMove}
         className="w-full pt-4 pb-14 sm:pb-20 overflow-hidden"
       >
         <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12">
