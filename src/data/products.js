@@ -1,5 +1,27 @@
 export const ACCORD_PRODUCTS = [
   {
+    id: 'accord-royale',
+    name: 'Accord Royale Matte',
+    series: 'Imperial Series',
+    category: 'Interior Architectural',
+    categoryTab: 'interior',
+    isFlagship: true,
+    tagline: 'Imperial velvet architectural matte with deep optical richness',
+    sheen: 'Imperial Dead Matte (<3% Gloss)',
+    coverage: '140 - 170 sq.ft / Litre',
+    dryingTime: '20 mins (Touch), 3 hrs (Recoat)',
+    dilution: '40-45% with clean water',
+    packSizes: ['1 L', '4 L', '10 L', '20 L'],
+    image: '/images/accord_royale_pedestal.jpg',
+    features: [
+      'Velvety smooth non-reflective finish',
+      'Ultra-dense pigment dispersion',
+      'Washable & burnish resistant',
+      'Zero VOC & breathability certified',
+    ],
+    idealFor: 'Luxury salons, art spaces, master bedrooms, and dining galleries',
+  },
+  {
     id: 'luxury-semi-gloss',
     name: 'Luxury Semi Gloss Emulsion',
     series: 'Platinum Series',

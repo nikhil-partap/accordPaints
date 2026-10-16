@@ -911,6 +911,12 @@ export default function App() {
 
   useEffect(() => {
     const syncRoute = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#home') {
+        setCurrentView('home');
+        setSelectedProduct(null);
+        return;
+      }
       const route = parseRouteFromLocation();
       if (route.isProduct) {
         if (route.isRoyale) {
@@ -1349,19 +1355,7 @@ export default function App() {
         )}
       </header>
 
-      {/* ==========================================
-          CONDITIONAL ROUTING: PRODUCT PAGE vs HOME
-      ========================================== */}
-      {currentPage === 'product' ? (
-        <ProductPage
-          onNavigateHome={() => navigateTo('home')}
-          onLaunchVisualizer={() => {
-            navigateTo('home');
-            setTimeout(() => scrollToSection('visualizer'), 250);
-          }}
-        />
-      ) : (
-        <main>
+      <main>
 
       {/* ==========================================
           2. HERO SECTION
@@ -1741,7 +1735,6 @@ export default function App() {
         </div>
       </section>
       </main>
-      )}
 
       {/* ==========================================
           7. FOOTER (DEEP MIDNIGHT NAVY)
