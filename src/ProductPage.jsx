@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronRight,
   ChevronDown,
@@ -13,6 +13,11 @@ import {
   SlidersHorizontal,
   ArrowRight,
   Upload,
+  FileText,
+  Star,
+  RotateCcw,
+  Maximize2,
+  Info,
 } from 'lucide-react';
 
 // ==========================================
@@ -135,77 +140,100 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
   const [activePalette, setActivePalette] = useState(ROYALE_PALETTES[0]);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [selectedCanSize, setSelectedCanSize] = useState('1 Gallon');
+  const [quantity, setQuantity] = useState(1);
   const [filmModalOpen, setFilmModalOpen] = useState(false);
   const [visualizerModalOpen, setVisualizerModalOpen] = useState(false);
   const [expandedAccordion, setExpandedAccordion] = useState(0); // 0 = Formula, 1 = Coverage, 2 = Craft
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [calcSquareFeet, setCalcSquareFeet] = useState(350);
+  const [calcCoats, setCalcCoats] = useState(2);
+  const [showTds, setShowTds] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Modal custom room preview state
+  const [modalRoomIndex, setModalRoomIndex] = useState(0);
+  const [customRoomImage, setCustomRoomImage] = useState(null);
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
-    }, 3000);
+    }, 3200);
   };
 
-  // 3 gallery items
-  const galleryItems = [
-    {
-      type: 'image',
-      thumb: '/images/accord_room_arches.jpg',
-      label: 'Room Arches',
-      alt: 'Luxury interior archway hall in Accord Royale matte',
-    },
-    {
-      type: 'image',
-      thumb: '/images/accord_matte_texture.jpg',
-      label: 'Velvet Sheen',
-      alt: 'Macro velvet matte tactile paint drape',
-    },
-    {
-      type: 'video',
-      thumb:
-        'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=600&q=80',
-      label: 'Play the Film',
-      alt: 'Video showcase preview',
-    },
-  ];
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setFilmModalOpen(false);
+        setVisualizerModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Pricing calculation
+  const unitPrice =
+    selectedCanSize === '100ml Sample'
+      ? 0
+      : selectedCanSize === '1 Gallon'
+      ? 112
+      : 495;
+  const totalPrice = unitPrice * quantity;
+
+  // Coverage calculator metrics
+  const totalCoverageNeeded = calcSquareFeet * calcCoats;
+  const gallonsNeeded = Math.max(1, Math.ceil(totalCoverageNeeded / 400));
+
+  // Handle user uploaded photo for Visualizer
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (loadEvent) => {
+        setCustomRoomImage(loadEvent.target?.result);
+        triggerToast('Your room photo was loaded! AR wall tint applied.');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
-    <div className="w-full bg-[#FAF9F5] text-[#142333]">
+    <div className="w-full bg-[#FAF9F5] text-[#142333] transition-colors">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#142333] text-white px-4 py-3 rounded-2xl shadow-2xl border border-white/15 flex items-center gap-3 text-sm animate-bounce">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#142333] text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-white/15 flex items-center gap-3 text-sm animate-bounce">
           <span
             className="w-3.5 h-3.5 rounded-full shrink-0 border border-white/40"
             style={{ backgroundColor: activePalette.hex }}
           />
-          <span>{toastMessage}</span>
+          <span className="font-medium">{toastMessage}</span>
         </div>
       )}
 
       {/* ==========================================
           BREADCRUMBS
       ========================================== */}
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-5 pb-3">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-6 pb-3">
         <nav className="flex items-center gap-2 text-xs text-slate-500 font-medium">
           <button
             onClick={onNavigateHome}
-            className="hover:text-[#1B5153] transition-colors"
+            className="hover:text-[#1B5153] transition-colors cursor-pointer"
           >
             Home
           </button>
           <span>/</span>
-          <span className="hover:text-[#1B5153] cursor-pointer">
+          <button
+            onClick={onNavigateHome}
+            className="hover:text-[#1B5153] transition-colors cursor-pointer"
+          >
             Luxury Collections
-          </span>
+          </button>
           <span>/</span>
-          <span className="hover:text-[#1B5153] cursor-pointer">
-            Interior Matte
-          </span>
+          <span className="text-slate-500">Interior Matte</span>
           <span>/</span>
-          <span className="text-[#142333] font-semibold">
-            Accord Royale Matte
-          </span>
+          <span className="text-[#142333] font-bold">Accord Royale Matte</span>
         </nav>
       </div>
 
@@ -214,7 +242,7 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
       ========================================== */}
       <section className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-3 pb-14 sm:pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
-          {/* LEFT COLUMN: Main Hero Photo + Brush Badge + 3 Thumbnails */}
+          {/* LEFT COLUMN: Main Hero Photo + Brush Badge + 4 Thumbnails */}
           <div className="lg:col-span-6 flex flex-col gap-4">
             {/* Main Stage Image Container */}
             <div className="relative rounded-[28px] overflow-hidden bg-[#ECE8DE] border border-slate-200/80 shadow-lg aspect-square group">
@@ -258,63 +286,93 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
               {activeMediaIndex !== 0 && (
                 <button
                   onClick={() => setActiveMediaIndex(0)}
-                  className="absolute top-4 right-4 bg-white/90 hover:bg-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-md text-[#142333] transition-all"
+                  className="absolute top-4 right-4 bg-white/95 hover:bg-white text-xs font-semibold px-3.5 py-1.5 rounded-full shadow-md text-[#142333] transition-all cursor-pointer flex items-center gap-1.5"
                 >
-                  View Product Can
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>View Product Can</span>
                 </button>
               )}
             </div>
 
-            {/* 3 Gallery Thumbnails */}
-            <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-1">
+            {/* 4 Gallery Thumbnails Strip */}
+            <div className="grid grid-cols-4 gap-2.5 sm:gap-3.5 mt-1">
+              {/* Thumbnail 0: Product Can */}
+              <button
+                onClick={() => setActiveMediaIndex(0)}
+                className={`relative rounded-2xl overflow-hidden aspect-square border-2 transition-all cursor-pointer ${
+                  activeMediaIndex === 0
+                    ? 'border-[#1B5153] shadow-md scale-102 ring-2 ring-[#1B5153]/30'
+                    : 'border-slate-200 hover:border-slate-300 opacity-90 hover:opacity-100'
+                }`}
+                title="Accord Royale Can on Pedestal"
+              >
+                <img
+                  src="/images/accord_royale_pedestal.jpg"
+                  alt="Product Can"
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute bottom-1 left-1 right-1 text-[9.5px] font-bold bg-black/60 backdrop-blur-xs text-white text-center py-0.5 rounded">
+                  Can
+                </span>
+              </button>
+
               {/* Thumbnail 1: Arched Hallway */}
               <button
                 onClick={() => setActiveMediaIndex(1)}
-                className={`relative rounded-2xl overflow-hidden aspect-square border-2 transition-all ${
+                className={`relative rounded-2xl overflow-hidden aspect-square border-2 transition-all cursor-pointer ${
                   activeMediaIndex === 1
-                    ? 'border-[#1B5153] shadow-md scale-102'
-                    : 'border-transparent hover:border-slate-300 opacity-90 hover:opacity-100'
+                    ? 'border-[#1B5153] shadow-md scale-102 ring-2 ring-[#1B5153]/30'
+                    : 'border-slate-200 hover:border-slate-300 opacity-90 hover:opacity-100'
                 }`}
+                title="Living Room Arches"
               >
                 <img
                   src="/images/accord_room_arches.jpg"
                   alt="Room Arches"
                   className="w-full h-full object-cover"
                 />
+                <span className="absolute bottom-1 left-1 right-1 text-[9.5px] font-bold bg-black/60 backdrop-blur-xs text-white text-center py-0.5 rounded">
+                  Room
+                </span>
               </button>
 
               {/* Thumbnail 2: Velvet Texture Drape */}
               <button
                 onClick={() => setActiveMediaIndex(2)}
-                className={`relative rounded-2xl overflow-hidden aspect-square border-2 transition-all ${
+                className={`relative rounded-2xl overflow-hidden aspect-square border-2 transition-all cursor-pointer ${
                   activeMediaIndex === 2
-                    ? 'border-[#1B5153] shadow-md scale-102'
-                    : 'border-transparent hover:border-slate-300 opacity-90 hover:opacity-100'
+                    ? 'border-[#1B5153] shadow-md scale-102 ring-2 ring-[#1B5153]/30'
+                    : 'border-slate-200 hover:border-slate-300 opacity-90 hover:opacity-100'
                 }`}
+                title="Tactile Velvet Matte Finish"
               >
                 <img
                   src="/images/accord_matte_texture.jpg"
                   alt="Velvet Texture"
                   className="w-full h-full object-cover"
                 />
+                <span className="absolute bottom-1 left-1 right-1 text-[9.5px] font-bold bg-black/60 backdrop-blur-xs text-white text-center py-0.5 rounded">
+                  Matte
+                </span>
               </button>
 
               {/* Thumbnail 3: Video with Play Icon */}
               <button
                 onClick={() => setFilmModalOpen(true)}
-                className="relative rounded-2xl overflow-hidden aspect-square border-2 border-transparent hover:border-[#1B5153] group shadow-xs transition-all"
+                className="relative rounded-2xl overflow-hidden aspect-square border-2 border-slate-200 hover:border-[#1B5153] group shadow-xs transition-all cursor-pointer"
+                title="Play Architectural Film"
               >
                 <img
                   src="https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=600&q=80"
                   alt="Play the Film preview"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex flex-col items-center justify-center text-white">
-                  <div className="w-9 h-9 rounded-full bg-white/90 text-[#142333] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                <div className="absolute inset-0 bg-black/45 group-hover:bg-black/30 transition-colors flex flex-col items-center justify-center text-white">
+                  <div className="w-8 h-8 rounded-full bg-white/95 text-[#142333] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                   </div>
-                  <span className="text-[11px] font-semibold mt-1.5 drop-shadow">
-                    Play the Film
+                  <span className="text-[10px] font-bold mt-1 drop-shadow">
+                    Film
                   </span>
                 </div>
               </button>
@@ -355,7 +413,7 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
               </p>
             </div>
 
-            {/* Size & Finish Selector */}
+            {/* Size & Volume Selector */}
             <div className="mt-7 pt-5 border-t border-slate-200">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-2.5">
                 <span>Select Volume</span>
@@ -363,26 +421,165 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
               </div>
               <div className="grid grid-cols-3 gap-2.5">
                 {[
-                  { size: '100ml Sample', price: 'Free' },
-                  { size: '1 Gallon', price: '$112' },
-                  { size: '5 Gallons', price: '$495' },
+                  { size: '100ml Sample', price: 'Free', sub: 'Peel-and-Stick' },
+                  { size: '1 Gallon', price: '$112', sub: 'Covers ~400 sq.ft' },
+                  { size: '5 Gallons', price: '$495', sub: 'Covers ~2,000 sq.ft' },
                 ].map((item) => (
                   <button
                     key={item.size}
                     onClick={() => setSelectedCanSize(item.size)}
-                    className={`py-2.5 px-3 rounded-2xl border text-left transition-all ${
+                    className={`py-2.5 px-3 rounded-2xl border text-left transition-all cursor-pointer ${
                       selectedCanSize === item.size
-                        ? 'border-[#1B5153] bg-[#E4EEEE]/50 text-[#142333] shadow-xs'
+                        ? 'border-[#1B5153] bg-[#E4EEEE]/50 text-[#142333] shadow-xs ring-1 ring-[#1B5153]'
                         : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600'
                     }`}
                   >
                     <div className="text-xs font-bold">{item.size}</div>
-                    <div className="text-[11px] text-slate-500 font-medium">
+                    <div className="text-xs font-semibold text-[#1B5153] mt-0.5">
                       {item.price}
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-normal">
+                      {item.sub}
                     </div>
                   </button>
                 ))}
               </div>
+
+              {/* Quantity Stepper & Calculator Trigger */}
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200/60">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-slate-700">Quantity:</span>
+                  <div className="flex items-center border border-slate-300 rounded-full bg-white px-2 py-1 shadow-2xs">
+                    <button
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      disabled={quantity <= 1}
+                      className="w-6 h-6 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600 disabled:opacity-30 cursor-pointer font-bold text-sm"
+                      aria-label="Decrease quantity"
+                    >
+                      −
+                    </button>
+                    <span className="w-8 text-center text-xs font-bold text-[#142333]">
+                      {quantity}
+                    </span>
+                    <button
+                      onClick={() => setQuantity((q) => q + 1)}
+                      className="w-6 h-6 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600 cursor-pointer font-bold text-sm"
+                      aria-label="Increase quantity"
+                    >
+                      +
+                    </button>
+                  </div>
+                  {unitPrice > 0 && (
+                    <span className="text-xs font-bold text-[#1B5153]">
+                      Total: ${totalPrice.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+
+                {/* Open Coverage Calculator Button */}
+                <button
+                  onClick={() => setShowCalculator(!showCalculator)}
+                  className="text-xs font-semibold text-[#1B5153] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>
+                    {showCalculator ? 'Close Calculator' : 'Need help with coverage?'}
+                  </span>
+                </button>
+              </div>
+
+              {/* In-place Room Coverage Calculator */}
+              {showCalculator && (
+                <div className="mt-3.5 p-4 rounded-2xl bg-[#EFECE3]/80 border border-[#DFDACB] animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-[#142333] flex items-center gap-1.5">
+                      <span>📐 Room Coverage Calculator</span>
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#1B5153]">
+                      1 Gal = 400 sq.ft / coat
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <label className="text-slate-600 block mb-1">
+                        Room Wall Area:{' '}
+                        <span className="font-bold text-[#142333]">
+                          {calcSquareFeet} sq.ft
+                        </span>
+                      </label>
+                      <input
+                        type="range"
+                        min="100"
+                        max="1500"
+                        step="25"
+                        value={calcSquareFeet}
+                        onChange={(e) =>
+                          setCalcSquareFeet(Number(e.target.value))
+                        }
+                        className="w-full accent-[#1B5153] cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
+                        <span>100 sq.ft (Powder)</span>
+                        <span>700 (Living)</span>
+                        <span>1,500+ (Suite)</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-slate-600 block mb-1">
+                        Coats Recommended:
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => setCalcCoats(1)}
+                          className={`py-1.5 px-2 rounded-xl text-center font-medium border text-xs cursor-pointer transition-colors ${
+                            calcCoats === 1
+                              ? 'bg-[#1B5153] text-white border-[#1B5153]'
+                              : 'bg-white text-slate-700 border-slate-300'
+                          }`}
+                        >
+                          1 Coat (Touchup)
+                        </button>
+                        <button
+                          onClick={() => setCalcCoats(2)}
+                          className={`py-1.5 px-2 rounded-xl text-center font-medium border text-xs cursor-pointer transition-colors ${
+                            calcCoats === 2
+                              ? 'bg-[#1B5153] text-white border-[#1B5153]'
+                              : 'bg-white text-slate-700 border-slate-300'
+                          }`}
+                        >
+                          2 Coats (Standard)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-2.5 border-t border-[#DFDACB]/70 flex items-center justify-between flex-wrap gap-2">
+                    <div className="text-xs text-slate-700">
+                      Recommendation:{' '}
+                      <span className="font-bold text-[#142333]">
+                        {gallonsNeeded} Gallon{gallonsNeeded > 1 ? 's' : ''}
+                      </span>{' '}
+                      <span className="text-slate-500 text-[11px]">
+                        ({totalCoverageNeeded} sq.ft total coverage)
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedCanSize('1 Gallon');
+                        setQuantity(gallonsNeeded);
+                        triggerToast(
+                          `Selected ${gallonsNeeded}x Gallon cans for ${calcSquareFeet} sq.ft!`
+                        );
+                      }}
+                      className="bg-[#1B5153] hover:bg-[#133C3E] text-white text-[11px] font-semibold px-3.5 py-1.5 rounded-full shadow-xs cursor-pointer"
+                    >
+                      Apply {gallonsNeeded} Gallon{gallonsNeeded > 1 ? 's' : ''} to Order
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -390,20 +587,24 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
               <button
                 onClick={() =>
                   triggerToast(
-                    `Added 1x Accord Royale (${activePalette.name}, ${selectedCanSize}) to Cart!`
+                    `Added ${quantity}x Accord Royale (${activePalette.name}, ${selectedCanSize}) to Cart! Total: $${totalPrice.toLocaleString()}`
                   )
                 }
-                className="flex-1 bg-[#1B5153] hover:bg-[#133C3E] text-white font-semibold text-xs sm:text-sm py-3.5 px-6 rounded-full shadow-md hover:shadow-lg transition-all active:scale-95 text-center"
+                className="flex-1 bg-[#1B5153] hover:bg-[#133C3E] text-white font-semibold text-xs sm:text-sm py-3.5 px-6 rounded-full shadow-md hover:shadow-lg transition-all active:scale-95 text-center cursor-pointer"
               >
-                Order {selectedCanSize}
+                Order {quantity > 1 ? `${quantity}x ` : ''}
+                {selectedCanSize}
+                {totalPrice > 0
+                  ? ` • $${totalPrice.toLocaleString()}`
+                  : ' • Free'}
               </button>
               <button
                 onClick={() =>
                   triggerToast(
-                    `Peel-and-stick color sample chip for "${activePalette.name}" ordered!`
+                    `Peel-and-stick color sample chip for "${activePalette.name}" ordered with free delivery!`
                   )
                 }
-                className="bg-transparent hover:bg-slate-900/5 text-[#142333] font-semibold text-xs sm:text-sm py-3.5 px-6 rounded-full border border-slate-400 transition-all active:scale-95 whitespace-nowrap"
+                className="bg-transparent hover:bg-slate-900/5 text-[#142333] font-semibold text-xs sm:text-sm py-3.5 px-6 rounded-full border border-slate-400 transition-all active:scale-95 whitespace-nowrap cursor-pointer"
               >
                 Order Free Swatch
               </button>
@@ -432,9 +633,20 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
           THE PALETTE SECTION
       ========================================== */}
       <section className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-10 sm:py-14 border-t border-slate-200">
-        <h2 className="font-serif-editorial text-3xl sm:text-4xl font-bold text-[#142333] mb-8">
-          The Palette
-        </h2>
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
+          <div>
+            <h2 className="font-serif-editorial text-3xl sm:text-4xl font-bold text-[#142333]">
+              The Palette
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 mt-1">
+              Curated architectural minerals with 100% light-absorption depth.
+            </p>
+          </div>
+          <span className="text-xs font-semibold text-slate-500 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-2xs">
+            Currently Selected:{' '}
+            <span className="font-bold text-[#142333]">{activePalette.name}</span>
+          </span>
+        </div>
 
         {/* 5 Round Swatches matching Mockup */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-6 sm:gap-8">
@@ -460,7 +672,7 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
                 >
                   {/* "Active" pill inside the circle matching mockup */}
                   {isActive && (
-                    <span className="bg-white/90 backdrop-blur-xs text-[#142333] text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
+                    <span className="bg-white/95 backdrop-blur-xs text-[#142333] text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
                       Active
                     </span>
                   )}
@@ -494,76 +706,76 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
               </span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-2.5 max-w-sm">
-              Let our designer palettes guide your vision. Balanced mineral undertones
-              engineered to harmonize naturally in ambient light.
+              Let our designer palettes guide your vision. Click any swatch in
+              the trios below to apply it to your room preview instantly.
             </p>
           </div>
 
           {/* Right Trios matching Mockup */}
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Story 1 */}
-            <div
-              onClick={() =>
-                triggerToast(
-                  'Palette Trio applied: Forest Mist + Delicate Sand + Terracotta Dream'
-                )
-              }
-              className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all cursor-pointer group"
-            >
-              {/* Overlapping Swatch Discs */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all group">
+              {/* Overlapping Swatch Discs with Clickable Interaction */}
               <div className="flex items-center -space-x-3 mb-4">
-                <div
-                  className="w-12 h-12 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-105"
-                  style={{ backgroundColor: '#256666' }}
-                />
-                <div
-                  className="w-12 h-12 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-105"
-                  style={{ backgroundColor: '#E5DAC8' }}
-                />
-                <div
-                  className="w-12 h-12 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-105"
-                  style={{ backgroundColor: '#BE5C45' }}
-                />
+                {[
+                  { id: 'forest-mist', name: 'Forest Mist', hex: '#256666', code: '#0AA6BB' },
+                  { id: 'delicate-sand', name: 'Delicate Sand', hex: '#E5DAC8', code: '#E3B76B' },
+                  { id: 'terracotta-dream', name: 'Terracotta Dream', hex: '#BE5C45', code: '#BG3660' },
+                ].map((swatch) => (
+                  <button
+                    key={swatch.id}
+                    onClick={() => {
+                      const found = ROYALE_PALETTES.find((p) => p.id === swatch.id);
+                      if (found) {
+                        setActivePalette(found);
+                        triggerToast(`Applied "${swatch.name}" from Earthy & Botanical Haven!`);
+                      }
+                    }}
+                    className="w-12 h-12 rounded-full border-2 border-white shadow-sm transition-transform hover:scale-115 hover:z-20 cursor-pointer"
+                    style={{ backgroundColor: swatch.hex }}
+                    title={`Click to apply ${swatch.name}`}
+                  />
+                ))}
               </div>
               <h4 className="font-bold text-xs sm:text-[13px] text-[#142333] leading-snug">
                 Forest Mist + Delicate Sand
                 <br />+ Terracotta Dream
               </h4>
               <p className="text-[11px] text-slate-500 mt-1">
-                Earthy & Botanical Haven
+                Earthy & Botanical Haven • Click any shade above
               </p>
             </div>
 
             {/* Story 2 */}
-            <div
-              onClick={() =>
-                triggerToast(
-                  'Palette Trio applied: Forest Mist + Golden Hour + Terracotta Dream'
-                )
-              }
-              className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all cursor-pointer group"
-            >
-              {/* Overlapping Swatch Discs */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all group">
+              {/* Overlapping Swatch Discs with Clickable Interaction */}
               <div className="flex items-center -space-x-3 mb-4">
-                <div
-                  className="w-12 h-12 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-105"
-                  style={{ backgroundColor: '#256666' }}
-                />
-                <div
-                  className="w-12 h-12 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-105"
-                  style={{ backgroundColor: '#E5DAC8' }}
-                />
-                <div
-                  className="w-12 h-12 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-105"
-                  style={{ backgroundColor: '#D99B38' }}
-                />
+                {[
+                  { id: 'forest-mist', name: 'Forest Mist', hex: '#256666', code: '#0AA6BB' },
+                  { id: 'golden-hour', name: 'Golden Hour', hex: '#D99B38', code: '#FK9CF0' },
+                  { id: 'terracotta-dream', name: 'Terracotta Dream', hex: '#BE5C45', code: '#BG3660' },
+                ].map((swatch) => (
+                  <button
+                    key={swatch.id}
+                    onClick={() => {
+                      const found = ROYALE_PALETTES.find((p) => p.id === swatch.id);
+                      if (found) {
+                        setActivePalette(found);
+                        triggerToast(`Applied "${swatch.name}" from Sunlit Architectural Contrast!`);
+                      }
+                    }}
+                    className="w-12 h-12 rounded-full border-2 border-white shadow-sm transition-transform hover:scale-115 hover:z-20 cursor-pointer"
+                    style={{ backgroundColor: swatch.hex }}
+                    title={`Click to apply ${swatch.name}`}
+                  />
+                ))}
               </div>
               <h4 className="font-bold text-xs sm:text-[13px] text-[#142333] leading-snug">
                 Forest Mist + Golden Hour
                 <br />+ Terracotta Dream
               </h4>
               <p className="text-[11px] text-slate-500 mt-1">
-                Sunlit Architectural Contrast
+                Sunlit Architectural Contrast • Click any shade above
               </p>
             </div>
           </div>
@@ -592,7 +804,7 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
                 }}
               />
               {/* Swatch Pill Badge on Wall */}
-              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-full shadow-md flex items-center gap-2">
+              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-xs px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-2">
                 <span
                   className="w-3 h-3 rounded-full border border-black/10"
                   style={{ backgroundColor: activePalette.hex }}
@@ -612,23 +824,17 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
                 Preview the Artistry
               </h4>
               <p className="text-xs sm:text-sm text-slate-600 mt-3 leading-relaxed">
-                Visualize {activePalette.name} in your own space instantly with AR.
-                Experience how natural morning and evening light shifts the velvety
-                depth of Accord Royale Matte.
+                Visualize {activePalette.name} in your own space instantly with
+                our interactive visualizer. Experience how ambient lighting
+                shifts the velvety depth of Accord Royale Matte.
               </p>
-              <div className="mt-6">
+              <div className="mt-6 flex items-center gap-3">
                 <button
-                  onClick={() => {
-                    if (onLaunchVisualizer) {
-                      onLaunchVisualizer();
-                    } else {
-                      setVisualizerModalOpen(true);
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 bg-transparent hover:bg-[#1B5153] hover:text-white text-[#142333] font-semibold text-xs sm:text-sm px-6 py-3 rounded-full border border-slate-700 hover:border-[#1B5153] transition-all duration-200 active:scale-95 shadow-2xs"
+                  onClick={() => setVisualizerModalOpen(true)}
+                  className="inline-flex items-center gap-2 bg-[#1B5153] hover:bg-[#133C3E] text-white font-semibold text-xs sm:text-sm px-6 py-3 rounded-full transition-all duration-200 active:scale-95 shadow-sm cursor-pointer"
                 >
                   <Camera className="w-4 h-4" />
-                  Launch Visualizer
+                  Launch AR Studio Camera
                 </button>
               </div>
             </div>
@@ -655,6 +861,14 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
               Every can of Accord Royale is precision-milled with micro-ceramic
               particles for ultra-flat light diffusion and lifetime color richness.
             </p>
+
+            <button
+              onClick={() => setShowTds(!showTds)}
+              className="mt-5 inline-flex items-center gap-2 text-xs font-bold text-[#1B5153] hover:underline cursor-pointer"
+            >
+              <FileText className="w-4 h-4" />
+              <span>{showTds ? 'Hide Technical Data Sheet' : 'View Full Technical Specs (TDS) ↓'}</span>
+            </button>
           </div>
 
           {/* Right Accordions matching Mockup */}
@@ -689,7 +903,7 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
                     onClick={() =>
                       setExpandedAccordion(isExpanded ? -1 : idx)
                     }
-                    className="w-full flex items-center justify-between text-left py-2 group"
+                    className="w-full flex items-center justify-between text-left py-2 group cursor-pointer"
                   >
                     <span className="text-xs sm:text-[14px] font-bold text-[#142333] group-hover:text-[#1B5153] transition-colors">
                       {acc.title}{' '}
@@ -710,6 +924,46 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
                 </div>
               );
             })}
+
+            {/* Expandable Technical Data Sheet (TDS) Table */}
+            {showTds && (
+              <div className="mt-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm animate-in fade-in duration-200">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-[#142333]">
+                    Technical Data Sheet (TDS) Summary
+                  </h4>
+                  <span className="text-[11px] text-[#1B5153] font-semibold">
+                    ASTM Certified
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2.5 gap-x-4 text-xs">
+                  <div>
+                    <span className="text-slate-500">Finish:</span>{' '}
+                    <span className="font-semibold text-slate-800">Velvet Flat Matte (3% at 60°)</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Resin Base:</span>{' '}
+                    <span className="font-semibold text-slate-800">Pure Acrylic & Bio-Copolymer</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">VOC Level:</span>{' '}
+                    <span className="font-semibold text-slate-800">&lt; 2 g/L (LEED v4 compliant)</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Spread Rate:</span>{' '}
+                    <span className="font-semibold text-slate-800">400 - 450 sq.ft / Gallon</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Drying Schedule:</span>{' '}
+                    <span className="font-semibold text-slate-800">Touch: 30m | Recoat: 2 hrs</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Scrub Rating:</span>{' '}
+                    <span className="font-semibold text-slate-800">ASTM D2486 Class 1 (&gt;2,000 scrubs)</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -782,11 +1036,17 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
           VIDEO LIGHTBOX MODAL ("Play the Film")
       ========================================== */}
       {filmModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setFilmModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+        >
           <div className="bg-[#142333] rounded-3xl max-w-2xl w-full p-6 text-white relative shadow-2xl border border-white/20 animate-in zoom-in-95 duration-200">
             <button
               onClick={() => setFilmModalOpen(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer"
+              aria-label="Close film"
             >
               <X className="w-4 h-4" />
             </button>
@@ -810,7 +1070,10 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
               <div className="absolute flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-full bg-white text-[#142333] flex items-center justify-center shadow-2xl mb-2 hover:scale-110 transition-transform cursor-pointer">
+                <div
+                  onClick={() => triggerToast('Streaming Accord Royale 4K HDR Film...')}
+                  className="w-16 h-16 rounded-full bg-white text-[#142333] flex items-center justify-center shadow-2xl mb-2 hover:scale-110 transition-transform cursor-pointer"
+                >
                   <Play className="w-7 h-7 fill-current ml-1" />
                 </div>
                 <span className="text-xs font-semibold tracking-wide">
@@ -826,11 +1089,17 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
           INTERACTIVE AR / VISUALIZER MODAL
       ========================================== */}
       {visualizerModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#FAF9F5] rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 relative">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setVisualizerModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+        >
+          <div className="bg-[#FAF9F5] rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative my-6">
             <button
               onClick={() => setVisualizerModalOpen(false)}
-              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-200 flex items-center justify-center text-slate-600"
+              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer"
+              aria-label="Close visualizer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -841,38 +1110,122 @@ export default function ProductPage({ onNavigateHome, onLaunchVisualizer }) {
               Visualize {activePalette.name} on Your Walls
             </h3>
             <p className="text-xs text-slate-600 mt-1">
-              Upload a snapshot of your room to test Accord Royale Matte with
-              real-time ambient lighting simulation.
+              Select a room scene or upload a snapshot of your room to test Accord
+              Royale Matte in ambient lighting.
             </p>
 
-            <div className="my-5 relative rounded-2xl overflow-hidden aspect-video border-2 border-dashed border-[#1B5153]/40 bg-[#E4EEEE]/40 flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:border-[#1B5153] transition-colors">
-              <Upload className="w-8 h-8 text-[#1B5153] mb-2" />
-              <span className="text-xs font-bold text-[#142333]">
-                Drop room photo or take camera snap
-              </span>
-              <span className="text-[11px] text-slate-500 mt-0.5">
-                Instant AR wall segmentation
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center gap-2">
+            {/* Room Preview with Active Wall Tint */}
+            <div className="my-4 relative rounded-2xl overflow-hidden aspect-video bg-slate-900 border border-slate-300 shadow-sm">
+              <img
+                src={
+                  customRoomImage ||
+                  (modalRoomIndex === 0
+                    ? '/images/accord_room_arches.jpg'
+                    : '/images/accord_visualizer_room.jpg')
+                }
+                alt="Room Preview"
+                className="w-full h-full object-cover"
+              />
+              <div
+                className="absolute inset-0 mix-blend-multiply transition-colors duration-500 pointer-events-none"
+                style={{ backgroundColor: activePalette.hex, opacity: 0.42 }}
+              />
+              <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-xs px-3 py-1 rounded-full text-xs font-semibold text-[#142333] shadow-md flex items-center gap-1.5">
                 <span
-                  className="w-4 h-4 rounded-full border border-black/10"
+                  className="w-3 h-3 rounded-full border border-black/10"
                   style={{ backgroundColor: activePalette.hex }}
                 />
-                <span className="text-xs font-semibold text-[#142333]">
-                  {activePalette.name} ({activePalette.code})
-                </span>
+                <span>{activePalette.name} ({activePalette.code})</span>
               </div>
+            </div>
+
+            {/* Room Presets & Photo Uploader */}
+            <div className="flex items-center justify-between gap-2 text-xs mb-4">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setCustomRoomImage(null);
+                    setModalRoomIndex(0);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl border font-medium cursor-pointer transition-colors ${
+                    !customRoomImage && modalRoomIndex === 0
+                      ? 'bg-[#1B5153] text-white border-[#1B5153]'
+                      : 'bg-white text-slate-700 border-slate-300'
+                  }`}
+                >
+                  Arched Room
+                </button>
+                <button
+                  onClick={() => {
+                    setCustomRoomImage(null);
+                    setModalRoomIndex(1);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl border font-medium cursor-pointer transition-colors ${
+                    !customRoomImage && modalRoomIndex === 1
+                      ? 'bg-[#1B5153] text-white border-[#1B5153]'
+                      : 'bg-white text-slate-700 border-slate-300'
+                  }`}
+                >
+                  Studio Room
+                </button>
+              </div>
+
+              <label className="inline-flex items-center gap-1.5 bg-white border border-slate-300 hover:border-[#1B5153] px-3 py-1.5 rounded-xl font-medium cursor-pointer text-slate-700 hover:text-[#1B5153] transition-colors">
+                <Upload className="w-3.5 h-3.5 text-[#1B5153]" />
+                <span>Upload Room Photo</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Quick Color Strip inside Modal */}
+            <div className="border-t border-slate-200 pt-3">
+              <span className="text-[11px] font-semibold text-slate-500 block mb-2">
+                Switch Color in Preview:
+              </span>
+              <div className="flex items-center gap-2.5">
+                {ROYALE_PALETTES.map((pal) => (
+                  <button
+                    key={pal.id}
+                    onClick={() => setActivePalette(pal)}
+                    className={`flex-1 py-1 px-1.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      activePalette.id === pal.id
+                        ? 'border-[#1B5153] ring-2 ring-[#1B5153]/40 bg-white'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div
+                      className="w-full h-5 rounded-lg mb-1"
+                      style={{ backgroundColor: pal.hex }}
+                    />
+                    <span className="text-[10px] font-bold block text-slate-700 truncate">
+                      {pal.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-slate-200">
+              <button
+                onClick={() => setVisualizerModalOpen(false)}
+                className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-4 py-2 cursor-pointer"
+              >
+                Close
+              </button>
               <button
                 onClick={() => {
                   setVisualizerModalOpen(false);
-                  triggerToast(`AR preview generated for ${activePalette.name}!`);
+                  triggerToast(`AR preview applied with ${activePalette.name}!`);
                 }}
-                className="bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs font-semibold px-5 py-2.5 rounded-full"
+                className="bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs font-semibold px-5 py-2.5 rounded-full cursor-pointer shadow-sm"
               >
-                Apply Sample Wall
+                Done
               </button>
             </div>
           </div>

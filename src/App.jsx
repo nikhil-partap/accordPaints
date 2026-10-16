@@ -850,7 +850,7 @@ export default function App() {
     const handleHash = () => {
       if (window.location.hash === '#home') {
         setCurrentPage('home');
-      } else if (window.location.hash === '#product') {
+      } else {
         setCurrentPage('product');
       }
     };
