@@ -12,6 +12,7 @@ import {
   Copy,
   Check,
   X,
+  Menu,
   Upload,
   MoveHorizontal,
   Award,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import ProductsSection from './ProductsSection';
 import ProductDetailPage from './ProductDetailPage';
+import { ACCORD_PRODUCTS, getProductById } from './data/products';
 
 const Instagram = ({ className = 'w-3.5 h-3.5' }) => (
   <svg
@@ -836,36 +838,88 @@ function BeforeAfterCard({ item }) {
 export default function App() {
   const { scrollY, scrollProgress } = useScrollMetrics();
 
+  // Helper to parse route from pathname, hash, or query parameters
+  const parseRouteFromLocation = () => {
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    const search = window.location.search.toLowerCase();
+
+    const isProductRoute =
+      path.startsWith('/product') ||
+      path.startsWith('/products') ||
+      path.startsWith('/all-products') ||
+      hash.startsWith('#product') ||
+      hash.startsWith('#products') ||
+      hash.startsWith('#product-detail') ||
+      hash.startsWith('#all-products') ||
+      search.includes('view=product') ||
+      search.includes('page=product');
+
+    let prod = null;
+    if (isProductRoute) {
+      const pathParts = path.split('/').filter(Boolean);
+      if (pathParts.length > 1 && pathParts[1] && pathParts[1] !== 'detail') {
+        prod = getProductById(pathParts[1]);
+      }
+      if (!prod && hash.includes('/')) {
+        const hashId = hash.split('/')[1];
+        if (hashId) prod = getProductById(hashId);
+      } else if (!prod && hash.includes('=')) {
+        const hashId = hash.split('=')[1];
+        if (hashId) prod = getProductById(hashId);
+      }
+      if (!prod) {
+        prod = ACCORD_PRODUCTS[0];
+      }
+    }
+
+    return { isProduct: isProductRoute, product: prod };
+  };
+
+  const initialRoute = parseRouteFromLocation();
   // Active view: 'home' | 'product'
-  const [currentView, setCurrentView] = useState(() => {
-    return window.location.hash === '#product' ? 'product' : 'home';
-  });
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [currentView, setCurrentView] = useState(
+    initialRoute.isProduct ? 'product' : 'home'
+  );
+  const [selectedProduct, setSelectedProduct] = useState(initialRoute.product);
 
   const navigateToProduct = (prod = null) => {
-    setSelectedProduct(prod);
+    const targetProduct = prod || ACCORD_PRODUCTS[0];
+    setSelectedProduct(targetProduct);
     setCurrentView('product');
-    window.location.hash = '#product';
+    const targetHash = targetProduct?.id ? `#product/${targetProduct.id}` : '#product';
+    window.history.pushState({ view: 'product', prodId: targetProduct?.id }, '', targetHash);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const navigateToHome = () => {
+    setSelectedProduct(null);
     setCurrentView('home');
-    window.location.hash = '';
+    window.history.pushState({ view: 'home' }, '', window.location.pathname === '/' ? '#' : '/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   useEffect(() => {
-    const handleHash = () => {
-      if (window.location.hash === '#product') {
+    const syncRoute = () => {
+      const route = parseRouteFromLocation();
+      if (route.isProduct) {
         setCurrentView('product');
-      } else if (!window.location.hash || window.location.hash === '#top' || window.location.hash === '#home') {
+        setSelectedProduct(route.product);
+      } else {
         setCurrentView('home');
       }
     };
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
+
+    window.addEventListener('hashchange', syncRoute);
+    window.addEventListener('popstate', syncRoute);
+    return () => {
+      window.removeEventListener('hashchange', syncRoute);
+      window.removeEventListener('popstate', syncRoute);
+    };
   }, []);
+
+  // Mobile menu open state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Interactive Hero wall tint state
   const [heroWallColor, setHeroWallColor] = useState('#BC5B45');
@@ -946,6 +1000,7 @@ export default function App() {
       <ProductDetailPage
         product={selectedProduct}
         onBackToHome={navigateToHome}
+        onSelectProduct={(newProd) => navigateToProduct(newProd)}
         onSelectColor={(item) => {
           setHeroWallColor(item.hex);
           setHeroWallName(item.name);
@@ -964,21 +1019,33 @@ export default function App() {
           style={{
             width: `${scrollProgress}%`,
             background:
-              'linear-gradient(90deg, #1B5153 0%, #0AA6BB 30%, #EAB849 65%, #BE5C45 100%)',
+              'linear-gradient(90deg, #1B5153 0%, #256666 30%, #EAB849 60%, #BE5C45 85%, #182C49 100%)',
           }}
         />
       </div>
 
-      {/* Toast Notification */}
+      {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#142333] text-white px-4 py-3 rounded-2xl shadow-2xl border border-white/15 flex items-center gap-3 text-sm animate-bounce">
-          <span
+        <div className="fixed bottom-6 right-6 z-50 bg-[#142333] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 flex items-center gap-3 text-sm animate-bounce">
+          <div
             className="w-3.5 h-3.5 rounded-full shrink-0 border border-white/40"
             style={{ backgroundColor: heroWallColor }}
           />
           <span>{toastMessage}</span>
         </div>
       )}
+
+      {/* Persistent Floating Quick Access Pill */}
+      <div className="fixed bottom-5 left-5 z-40">
+        <button
+          onClick={() => navigateToProduct()}
+          className="bg-[#0D4A52] hover:bg-[#09393F] text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-full shadow-xl hover:shadow-2xl border border-white/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
+        >
+          <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+          <span>★ View Product Page</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
       {/* ==========================================
           1. STICKY HEADER / NAVIGATION BAR
@@ -991,182 +1058,260 @@ export default function App() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex items-center justify-between gap-4">
-            {/* Brand Logo */}
-            <a
-              href="#top"
-              className="flex items-center gap-2.5 group focus:outline-none"
+          {/* Brand Logo */}
+          <a
+            href="#top"
+            onClick={(e) => {
+              if (currentView !== 'home') {
+                e.preventDefault();
+                navigateToHome();
+              }
+            }}
+            className="flex items-center gap-2.5 group focus:outline-none"
+          >
+            <img
+              src="/images/brand/accord-logo-mockup.png"
+              alt="Accord Paints"
+              className="h-7 sm:h-8 w-auto object-contain"
+            />
+          </a>
+
+          {/* Desktop Center Nav Links */}
+          <nav className="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-slate-700">
+            <div
+              className="relative"
+              onMouseEnter={() => setProductsOpen(true)}
+              onMouseLeave={() => setProductsOpen(false)}
             >
-              <img
-                src="/images/brand/accord-logo-mockup.png"
-                alt="Accord Paints"
-                className="h-7 sm:h-8 w-auto object-contain"
-              />
-            </a>
-
-            {/* Center Nav Links */}
-            <nav className="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-slate-700">
-              <div
-                className="relative"
-                onMouseEnter={() => setProductsOpen(true)}
-                onMouseLeave={() => setProductsOpen(false)}
+              <button
+                onClick={() => {
+                  setProductsOpen(false);
+                  navigateToProduct();
+                }}
+                className="flex items-center gap-1 hover:text-[#0D4A52] transition-colors py-1 cursor-pointer font-semibold text-[#0D4A52]"
               >
-                <button
-                  onClick={() => {
-                    setProductsOpen(false);
-                    navigateToProduct();
-                  }}
-                  className="flex items-center gap-1 hover:text-[#0D4A52] transition-colors py-1 cursor-pointer"
-                >
-                  <span>Products</span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                      productsOpen ? 'rotate-180 text-[#0D4A52]' : ''
-                    }`}
-                  />
-                </button>
+                <span>Products</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    productsOpen ? 'rotate-180 text-[#0D4A52]' : ''
+                  }`}
+                />
+              </button>
 
-                {/* Dropdown Menu */}
-                {productsOpen && (
-                  <div className="absolute top-full left-0 pt-2 w-64 z-50">
-                    <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2.5 grid gap-1">
-                      {/* Flagship Product Showcase Button */}
+              {/* Dropdown Menu */}
+              {productsOpen && (
+                <div className="absolute top-full left-0 pt-2 w-72 z-50">
+                  <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2.5 grid gap-1">
+                    {/* Flagship Product Showcase Button */}
+                    <button
+                      onClick={() => {
+                        setProductsOpen(false);
+                        navigateToProduct();
+                      }}
+                      className="w-full text-left bg-gradient-to-r from-[#0D4A52] to-[#182C49] text-white p-3 rounded-xl hover:shadow-md transition-all group cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                          ★ Flagship Product Page
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-0.5 transition-transform" />
+                      </div>
+                      <div className="text-xs font-bold text-white mt-0.5">
+                        Luxury Semi Gloss Emulsion
+                      </div>
+                      <div className="text-[10px] text-slate-200 mt-0.5 leading-tight">
+                        View full specifications, pack sizing & coverage calculator →
+                      </div>
+                    </button>
+
+                    <div className="h-px bg-slate-100 my-0.5" />
+
+                    {[
+                      {
+                        title: 'Interior Paints',
+                        desc: 'Zero-VOC luxury semi-gloss & matte',
+                        dot: '#256666',
+                        action: () => navigateToProduct(),
+                      },
+                      {
+                        title: 'Exterior WeatherShield',
+                        desc: 'Extreme rainfall & UV defense',
+                        dot: '#182C49',
+                        action: () =>
+                          navigateToProduct(getProductById('exterior-emulsion')),
+                      },
+                      {
+                        title: 'Metallica Designer Luster',
+                        desc: 'Shimmering metallic radiance',
+                        dot: '#EAB849',
+                        action: () =>
+                          navigateToProduct(getProductById('metallica-luster-paint')),
+                      },
+                      {
+                        title: 'All Product Collections',
+                        desc: 'Browse entire 9-product catalog',
+                        dot: '#BE5C45',
+                        action: () => {
+                          scrollToSection('products');
+                        },
+                      },
+                    ].map((prod) => (
                       <button
+                        key={prod.title}
                         onClick={() => {
                           setProductsOpen(false);
-                          navigateToProduct();
+                          prod.action();
                         }}
-                        className="w-full text-left bg-gradient-to-r from-[#0D4A52] to-[#182C49] text-white p-3 rounded-xl hover:shadow-md transition-all group"
+                        className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 text-left transition-colors group cursor-pointer"
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
-                            ★ Flagship Product Page
-                          </span>
-                          <ChevronRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-0.5 transition-transform" />
-                        </div>
-                        <div className="text-xs font-bold text-white mt-0.5">
-                          Luxury Semi Gloss Emulsion
-                        </div>
-                        <div className="text-[10px] text-slate-200 mt-0.5 leading-tight">
-                          View full specifications, pack sizing & coverage calculator →
+                        <span
+                          className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0"
+                          style={{ backgroundColor: prod.dot }}
+                        />
+                        <div>
+                          <div className="text-xs font-semibold text-[#142333] group-hover:text-[#0D4A52] transition-colors">
+                            {prod.title}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            {prod.desc}
+                          </div>
                         </div>
                       </button>
-
-                      <div className="h-px bg-slate-100 my-0.5" />
-
-                      {[
-                        {
-                          title: 'Interior Paints',
-                          desc: 'Zero-VOC luxury semi-gloss & matte',
-                          dot: '#256666',
-                          action: () => navigateToProduct(),
-                        },
-                        {
-                          title: 'Exterior WeatherShield',
-                          desc: 'Extreme rainfall & UV defense',
-                          dot: '#182C49',
-                          action: () =>
-                            navigateToProduct({
-                              id: 'exterior-emulsion',
-                              name: 'Exterior WeatherShield Emulsion',
-                              series: 'Gold Series',
-                              category: 'Exterior Wall Care',
-                              tagline: 'Extreme weather, UV and heavy rainfall protection',
-                              sheen: 'Eggshell Weather-Proof',
-                              coverage: '110 - 130 sq.ft / Litre',
-                              dryingTime: '45 mins (Touch), 4-6 hrs (Recoat)',
-                              dilution: '40% with clean water',
-                              packSizes: ['1 L', '4 L', '10 L', '20 L'],
-                              image: '/images/products/exterior-emulsion.jpg',
-                            }),
-                        },
-                        {
-                          title: 'One-Coat Primers',
-                          desc: 'High-adhesion sealing base coats',
-                          dot: '#EAB849',
-                          action: () => {
-                            setProductsOpen(false);
-                            scrollToSection('products');
-                          },
-                        },
-                        {
-                          title: 'Brushes & Supplies',
-                          desc: 'Pro rollers, trays & painter tape',
-                          dot: '#BE5C45',
-                          action: () => {
-                            setProductsOpen(false);
-                            scrollToSection('products');
-                          },
-                        },
-                      ].map((prod) => (
-                        <button
-                          key={prod.title}
-                          onClick={() => {
-                            setProductsOpen(false);
-                            prod.action();
-                          }}
-                          className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 text-left transition-colors group cursor-pointer"
-                        >
-                          <span
-                            className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0"
-                            style={{ backgroundColor: prod.dot }}
-                          />
-                          <div>
-                            <div className="text-xs font-semibold text-[#142333] group-hover:text-[#0D4A52] transition-colors">
-                              {prod.title}
-                            </div>
-                            <div className="text-[11px] text-slate-500">
-                              {prod.desc}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-
-                      <div className="pt-1 border-t border-slate-100 mt-0.5">
-                        <button
-                          onClick={() => {
-                            setProductsOpen(false);
-                            scrollToSection('products');
-                          }}
-                          className="w-full text-center py-1 text-[11px] font-semibold text-[#0D4A52] hover:text-[#09393F] hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
-                        >
-                          Browse All Product Collections ↓
-                        </button>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
 
-              <button
-                onClick={() => scrollToSection('products')}
-                className="hover:text-[#0D4A52] transition-colors"
-              >
-                Color Inspiration
-              </button>
-              <button
-                onClick={() =>
-                  triggerToast('Store Locator: 140+ Accord Paint Studios open near you!')
-                }
-                className="hover:text-[#0D4A52] transition-colors"
-              >
-                Find a Store
-              </button>
-              <button
-                onClick={() => scrollToSection('transformations')}
-                className="hover:text-[#0D4A52] transition-colors"
-              >
-                Get Inspired
-              </button>
-            </nav>
-
-            {/* Right Action Button (Single Pill Button matching Mockup) */}
+            <button
+              onClick={() => scrollToSection('products')}
+              className="hover:text-[#0D4A52] transition-colors cursor-pointer"
+            >
+              Catalog & Colors
+            </button>
             <button
               onClick={() => scrollToSection('visualizer')}
-              className="bg-[#0D4A52] hover:bg-[#09393F] text-white text-xs sm:text-[13.5px] font-semibold px-6 py-2.5 rounded-full shadow-sm hover:shadow transition-all duration-200 active:scale-95"
+              className="hover:text-[#0D4A52] transition-colors cursor-pointer"
+            >
+              Visualizer
+            </button>
+            <button
+              onClick={() =>
+                triggerToast('Store Locator: 140+ Accord Paint Studios open near you!')
+              }
+              className="hover:text-[#0D4A52] transition-colors cursor-pointer"
+            >
+              Find a Store
+            </button>
+            <button
+              onClick={() => scrollToSection('transformations')}
+              className="hover:text-[#0D4A52] transition-colors cursor-pointer"
+            >
+              Transformations
+            </button>
+          </nav>
+
+          {/* Right Action Buttons */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Direct Product Page Button */}
+            <button
+              onClick={() => navigateToProduct()}
+              className="bg-[#E4EEEE] hover:bg-[#d5e4e4] text-[#0D4A52] text-xs sm:text-[13px] font-bold px-3.5 sm:px-4 py-2 rounded-full transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            >
+              <span>Product Page</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Visualizer App Button */}
+            <button
+              onClick={() => scrollToSection('visualizer')}
+              className="hidden sm:inline-flex bg-[#0D4A52] hover:bg-[#09393F] text-white text-xs sm:text-[13.5px] font-semibold px-5 sm:px-6 py-2 sm:py-2.5 rounded-full shadow-sm hover:shadow transition-all duration-200 active:scale-95 cursor-pointer"
             >
               Visualizer App
             </button>
+
+            {/* Mobile Hamburger Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Toggle navigation"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Dropdown Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-[#FAF9F5] border-b border-slate-200 px-5 py-4 space-y-3 animate-fadeIn">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigateToProduct();
+              }}
+              className="w-full text-left bg-gradient-to-r from-[#0D4A52] to-[#182C49] text-white p-3.5 rounded-2xl shadow-sm flex items-center justify-between"
+            >
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                  ★ Flagship Product Page
+                </span>
+                <div className="text-sm font-bold mt-0.5">
+                  Luxury Semi Gloss Emulsion
+                </div>
+                <div className="text-[11px] text-slate-200 mt-0.5">
+                  View specs, sizes, prices & coverage calculator →
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white/80 shrink-0" />
+            </button>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  scrollToSection('products');
+                }}
+                className="bg-white border border-slate-200/80 p-2.5 rounded-xl text-left hover:bg-slate-50"
+              >
+                <div className="text-xs font-bold text-[#142333]">All Products</div>
+                <div className="text-[10px] text-slate-500">9 Paint Collections</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  scrollToSection('visualizer');
+                }}
+                className="bg-white border border-slate-200/80 p-2.5 rounded-xl text-left hover:bg-slate-50"
+              >
+                <div className="text-xs font-bold text-[#142333]">Visualizer App</div>
+                <div className="text-[10px] text-slate-500">Preview on walls</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  scrollToSection('transformations');
+                }}
+                className="bg-white border border-slate-200/80 p-2.5 rounded-xl text-left hover:bg-slate-50"
+              >
+                <div className="text-xs font-bold text-[#142333]">Transformations</div>
+                <div className="text-[10px] text-slate-500">Before & After</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  triggerToast('Store Locator: 140+ Accord Studios open near you!');
+                }}
+                className="bg-white border border-slate-200/80 p-2.5 rounded-xl text-left hover:bg-slate-50"
+              >
+                <div className="text-xs font-bold text-[#142333]">Find a Store</div>
+                <div className="text-[10px] text-slate-500">Dealer locator</div>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ==========================================

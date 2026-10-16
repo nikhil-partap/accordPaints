@@ -12,9 +12,11 @@ import {
   Calculator,
   PhoneCall,
   Star,
+  ChevronRight,
 } from 'lucide-react';
+import { ACCORD_PRODUCTS } from './data/products';
 
-export default function ProductDetailPage({ product, onBackToHome, onSelectColor }) {
+export default function ProductDetailPage({ product, onBackToHome, onSelectColor, onSelectProduct }) {
   const currentProduct = product || {
     id: 'luxury-semi-gloss',
     name: 'Luxury Semi Gloss Emulsion',
@@ -493,6 +495,72 @@ export default function ProductDetailPage({ product, onBackToHome, onSelectColor
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Explore Other Accord Products Showcase */}
+        <div className="mt-16 pt-10 border-t border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+            <div>
+              <span className="text-xs font-bold text-[#1B5153] uppercase tracking-wider">
+                Full Catalog
+              </span>
+              <h3 className="font-serif-editorial text-2xl sm:text-3xl font-bold text-[#142333] mt-1">
+                Explore Other Accord Products
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                Browse our premium architectural coatings, primers, and exterior emulsions.
+              </p>
+            </div>
+            <button
+              onClick={onBackToHome}
+              className="text-xs font-semibold text-[#1B5153] hover:underline flex items-center gap-1 self-start sm:self-auto"
+            >
+              <span>Back to Landing Page</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {ACCORD_PRODUCTS.filter((p) => p.id !== currentProduct.id).slice(0, 4).map((other) => (
+              <div
+                key={other.id}
+                onClick={() => {
+                  if (onSelectProduct) {
+                    onSelectProduct(other);
+                  }
+                }}
+                className="bg-white rounded-2xl border border-slate-200/80 p-4 hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer flex flex-col justify-between group"
+              >
+                <div>
+                  <div className="aspect-[4/3] rounded-xl overflow-hidden bg-slate-50 mb-3 relative">
+                    <img
+                      src={other.image}
+                      alt={other.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-xs text-[#142333]">
+                      {other.series}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-sm text-[#142333] group-hover:text-[#1B5153] transition-colors leading-snug">
+                    {other.name}
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                    {other.tagline}
+                  </p>
+                </div>
+
+                <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-slate-600">
+                    {other.packSizes ? other.packSizes.slice(0, 2).join(', ') : 'Multiple sizes'}
+                  </span>
+                  <span className="text-xs font-bold text-[#1B5153] flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                    View Specs →
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
