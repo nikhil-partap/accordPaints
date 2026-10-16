@@ -12,10 +12,17 @@ import {
   Copy,
   Check,
   X,
+  Menu,
   Upload,
   MoveHorizontal,
+  Award,
+  ShieldCheck,
+  ArrowRight,
 } from 'lucide-react';
 import ProductPage from './ProductPage.jsx';
+import ProductsSection from './ProductsSection';
+import ProductDetailPage from './ProductDetailPage';
+import { ACCORD_PRODUCTS, getProductById } from './data/products';
 
 const Instagram = ({ className = 'w-3.5 h-3.5' }) => (
   <svg
@@ -832,32 +839,101 @@ function BeforeAfterCard({ item }) {
 export default function App() {
   const { scrollY, scrollProgress } = useScrollMetrics();
 
-  // Page routing state ('product' by default for immediate preview, or 'home')
-  const [currentPage, setCurrentPage] = useState(() => {
-    if (typeof window !== 'undefined' && window.location.hash === '#home') {
-      return 'home';
-    }
-    return 'product';
-  });
+  // Helper to parse route from pathname, hash, or query parameters
+  const parseRouteFromLocation = () => {
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    const search = window.location.search.toLowerCase();
 
-  const navigateTo = (page) => {
-    setCurrentPage(page);
-    window.location.hash = page === 'home' ? 'home' : 'product';
+    const isRoyaleRoute = hash.includes('royale') || path.includes('royale');
+    const isProductRoute =
+      isRoyaleRoute ||
+      path.startsWith('/product') ||
+      path.startsWith('/products') ||
+      path.startsWith('/all-products') ||
+      hash.startsWith('#product') ||
+      hash.startsWith('#products') ||
+      hash.startsWith('#product-detail') ||
+      hash.startsWith('#all-products') ||
+      search.includes('view=product') ||
+      search.includes('page=product');
+
+    let prod = null;
+    if (isRoyaleRoute) {
+      prod = { id: 'accord-royale', name: 'Accord Royale Matte' };
+    } else if (isProductRoute) {
+      const pathParts = path.split('/').filter(Boolean);
+      if (pathParts.length > 1 && pathParts[1] && pathParts[1] !== 'detail') {
+        prod = getProductById(pathParts[1]);
+      }
+      if (!prod && hash.includes('/')) {
+        const hashId = hash.split('/')[1];
+        if (hashId) prod = getProductById(hashId);
+      } else if (!prod && hash.includes('=')) {
+        const hashId = hash.split('=')[1];
+        if (hashId) prod = getProductById(hashId);
+      }
+      if (!prod) {
+        prod = ACCORD_PRODUCTS[0];
+      }
+    }
+
+    return { isProduct: isProductRoute, product: prod, isRoyale: isRoyaleRoute };
+  };
+
+  const initialRoute = parseRouteFromLocation();
+  // Active view: 'home' | 'product' | 'royale'
+  const [currentView, setCurrentView] = useState(
+    initialRoute.isProduct ? (initialRoute.isRoyale ? 'royale' : 'product') : 'home'
+  );
+  const [selectedProduct, setSelectedProduct] = useState(initialRoute.product);
+
+  const navigateToProduct = (prod = null) => {
+    const targetProduct = prod || ACCORD_PRODUCTS[0];
+    setSelectedProduct(targetProduct);
+    if (targetProduct?.id === 'accord-royale') {
+      setCurrentView('royale');
+      window.history.pushState({ view: 'royale' }, '', '#accord-royale');
+    } else {
+      setCurrentView('product');
+      const targetHash = targetProduct?.id ? `#product/${targetProduct.id}` : '#product';
+      window.history.pushState({ view: 'product', prodId: targetProduct?.id }, '', targetHash);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToHome = () => {
+    setSelectedProduct(null);
+    setCurrentView('home');
+    window.history.pushState({ view: 'home' }, '', window.location.pathname === '/' ? '#' : '/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   useEffect(() => {
-    const handleHash = () => {
-      if (window.location.hash === '#home') {
-        setCurrentPage('home');
-      } else if (window.location.hash === '#product') {
-        setCurrentPage('product');
+    const syncRoute = () => {
+      const route = parseRouteFromLocation();
+      if (route.isProduct) {
+        if (route.isRoyale) {
+          setCurrentView('royale');
+        } else {
+          setCurrentView('product');
+        }
+        setSelectedProduct(route.product);
+      } else {
+        setCurrentView('home');
       }
     };
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
+
+    window.addEventListener('hashchange', syncRoute);
+    window.addEventListener('popstate', syncRoute);
+    return () => {
+      window.removeEventListener('hashchange', syncRoute);
+      window.removeEventListener('popstate', syncRoute);
+    };
   }, []);
 
+  // Mobile menu open state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Interactive Hero wall tint state
   const [heroWallColor, setHeroWallColor] = useState('#BC5B45');
   const [heroWallName, setHeroWallName] = useState('Terracotta Dream');
@@ -932,6 +1008,33 @@ export default function App() {
     setMousePos({ x, y });
   };
 
+  if (currentView === 'royale' || (currentView === 'product' && selectedProduct?.id === 'accord-royale')) {
+    return (
+      <ProductPage
+        onNavigateHome={navigateToHome}
+        onLaunchVisualizer={() => {
+          navigateToHome();
+          setTimeout(() => scrollToSection('visualizer'), 250);
+        }}
+      />
+    );
+  }
+
+  if (currentView === 'product') {
+    return (
+      <ProductDetailPage
+        product={selectedProduct}
+        onBackToHome={navigateToHome}
+        onSelectProduct={(newProd) => navigateToProduct(newProd)}
+        onSelectColor={(item) => {
+          setHeroWallColor(item.hex);
+          setHeroWallName(item.name);
+          triggerToast(`Applied "${item.name}" to room preview!`);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FAF9F5] font-sans text-[#142333] selection:bg-[#1B5153] selection:text-white flex flex-col w-full overflow-x-hidden">
       {/* Top Multi-Color Paint Stroke Scroll Progress Bar */}
@@ -941,21 +1044,33 @@ export default function App() {
           style={{
             width: `${scrollProgress}%`,
             background:
-              'linear-gradient(90deg, #1B5153 0%, #0AA6BB 30%, #EAB849 65%, #BE5C45 100%)',
+              'linear-gradient(90deg, #1B5153 0%, #256666 30%, #EAB849 60%, #BE5C45 85%, #182C49 100%)',
           }}
         />
       </div>
 
-      {/* Toast Notification */}
+      {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#142333] text-white px-4 py-3 rounded-2xl shadow-2xl border border-white/15 flex items-center gap-3 text-sm animate-bounce">
-          <span
+        <div className="fixed bottom-6 right-6 z-50 bg-[#142333] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 flex items-center gap-3 text-sm animate-bounce">
+          <div
             className="w-3.5 h-3.5 rounded-full shrink-0 border border-white/40"
             style={{ backgroundColor: heroWallColor }}
           />
           <span>{toastMessage}</span>
         </div>
       )}
+
+      {/* Persistent Floating Quick Access Pill */}
+      <div className="fixed bottom-5 left-5 z-40">
+        <button
+          onClick={() => navigateToProduct()}
+          className="bg-[#0D4A52] hover:bg-[#09393F] text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-full shadow-xl hover:shadow-2xl border border-white/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
+        >
+          <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+          <span>★ View Product Page</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
       {/* ==========================================
           1. STICKY HEADER / NAVIGATION BAR
@@ -968,190 +1083,270 @@ export default function App() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex items-center justify-between gap-4">
-            {/* Brand Logo */}
-            <a
-              href="#top"
-              onClick={(e) => {
+          {/* Brand Logo */}
+          <a
+            href="#top"
+            onClick={(e) => {
+              if (currentView !== 'home') {
                 e.preventDefault();
-                navigateTo('home');
-              }}
-              className="flex items-center gap-2.5 group focus:outline-none"
+                navigateToHome();
+              }
+            }}
+            className="flex items-center gap-2.5 group focus:outline-none"
+          >
+            <img
+              src="/images/brand/accord-logo-mockup.png"
+              alt="Accord Paints"
+              className="h-7 sm:h-8 w-auto object-contain"
+            />
+          </a>
+
+          {/* Desktop Center Nav Links */}
+          <nav className="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-slate-700">
+            <div
+              className="relative"
+              onMouseEnter={() => setProductsOpen(true)}
+              onMouseLeave={() => setProductsOpen(false)}
             >
-              <AccordLogo className="w-8 h-8 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-105" />
-              <span className="font-bold text-lg sm:text-[19px] tracking-tight text-[#142333]">
-                Accord <span className="font-medium text-slate-600">Paints</span>
-              </span>
-            </a>
-
-            {/* Center Nav Links */}
-            <nav className="hidden md:flex items-center gap-6 text-[13.5px] font-medium text-slate-700">
               <button
-                onClick={() => navigateTo('home')}
-                className={`transition-colors py-1 ${
-                  currentPage === 'home'
-                    ? 'text-[#1B5153] font-bold'
-                    : 'hover:text-[#1B5153]'
-                }`}
+                onClick={() => {
+                  setProductsOpen(false);
+                  navigateToProduct();
+                }}
+                className="flex items-center gap-1 hover:text-[#0D4A52] transition-colors py-1 cursor-pointer font-semibold text-[#0D4A52]"
               >
-                Home
+                <span>Products</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    productsOpen ? 'rotate-180 text-[#0D4A52]' : ''
+                  }`}
+                />
               </button>
 
-              {/* Accord Royale Product Button */}
-              <button
-                onClick={() => navigateTo('product')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-                  currentPage === 'product'
-                    ? 'bg-[#1B5153] text-white shadow-xs'
-                    : 'bg-[#FAF7F0] text-[#8C5D1E] border border-[#E8DEC8] hover:bg-[#F2ECE0]'
-                }`}
-              >
-                <span>Accord Royale</span>
-                <span className="text-[9px] uppercase tracking-wider bg-[#C08A3E] text-white px-1.5 py-0.2 rounded-full">
-                  Luxury
-                </span>
-              </button>
+              {/* Dropdown Menu */}
+              {productsOpen && (
+                <div className="absolute top-full left-0 pt-2 w-72 z-50">
+                  <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2.5 grid gap-1">
+                    {/* Flagship Product Showcase Button */}
+                    <button
+                      onClick={() => {
+                        setProductsOpen(false);
+                        navigateToProduct();
+                      }}
+                      className="w-full text-left bg-gradient-to-r from-[#0D4A52] to-[#182C49] text-white p-3 rounded-xl hover:shadow-md transition-all group cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                          ★ Flagship Product Page
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-0.5 transition-transform" />
+                      </div>
+                      <div className="text-xs font-bold text-white mt-0.5">
+                        Luxury Semi Gloss Emulsion
+                      </div>
+                      <div className="text-[10px] text-slate-200 mt-0.5 leading-tight">
+                        View full specifications, pack sizing & coverage calculator →
+                      </div>
+                    </button>
 
-              <div
-                className="relative"
-                onMouseEnter={() => setProductsOpen(true)}
-                onMouseLeave={() => setProductsOpen(false)}
-              >
-                <button
-                  onClick={() => setProductsOpen(!productsOpen)}
-                  className="flex items-center gap-1 hover:text-[#1B5153] transition-colors py-1"
-                >
-                  <span>Products</span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                      productsOpen ? 'rotate-180 text-[#1B5153]' : ''
-                    }`}
-                  />
-                </button>
+                    <div className="h-px bg-slate-100 my-0.5" />
 
-                {/* Dropdown Menu */}
-                {productsOpen && (
-                  <div className="absolute top-full left-0 pt-2 w-64 z-50">
-                    <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2.5 grid gap-1">
-                      {[
-                        {
-                          title: 'Accord Royale Matte',
-                          desc: 'Flagship velvet interior matte',
-                          dot: '#C08A3E',
-                          badge: 'Top Choice',
-                          action: () => {
-                            setProductsOpen(false);
-                            navigateTo('product');
-                          },
+                    {[
+                      {
+                        title: 'Accord Royale Matte',
+                        desc: 'Imperial velvet architectural matte',
+                        dot: '#C08A3E',
+                        action: () =>
+                          navigateToProduct({
+                            id: 'accord-royale',
+                            name: 'Accord Royale Matte',
+                          }),
+                      },
+                      {
+                        title: 'Interior Paints',
+                        desc: 'Zero-VOC luxury semi-gloss & matte',
+                        dot: '#256666',
+                        action: () => navigateToProduct(),
+                      },
+                      {
+                        title: 'Exterior WeatherShield',
+                        desc: 'Extreme rainfall & UV defense',
+                        dot: '#182C49',
+                        action: () =>
+                          navigateToProduct(getProductById('exterior-emulsion')),
+                      },
+                      {
+                        title: 'Metallica Designer Luster',
+                        desc: 'Shimmering metallic radiance',
+                        dot: '#EAB849',
+                        action: () =>
+                          navigateToProduct(getProductById('metallica-luster-paint')),
+                      },
+                      {
+                        title: 'All Product Collections',
+                        desc: 'Browse entire 9-product catalog',
+                        dot: '#BE5C45',
+                        action: () => {
+                          scrollToSection('products');
                         },
-                        {
-                          title: 'Interior Paints',
-                          desc: 'Zero-VOC matte & eggshell',
-                          dot: '#256666',
-                          action: () => {
-                            setProductsOpen(false);
-                            navigateTo('home');
-                            setTimeout(() => scrollToSection('palettes'), 150);
-                          },
-                        },
-                        {
-                          title: 'Exterior WeatherShield',
-                          desc: 'All-season UV durability',
-                          dot: '#182C49',
-                          action: () => {
-                            setProductsOpen(false);
-                            navigateTo('home');
-                            setTimeout(() => scrollToSection('palettes'), 150);
-                          },
-                        },
-                        {
-                          title: 'One-Coat Primers',
-                          desc: 'High-adhesion base coats',
-                          dot: '#EAB849',
-                          action: () => {
-                            setProductsOpen(false);
-                            navigateTo('home');
-                            setTimeout(() => scrollToSection('palettes'), 150);
-                          },
-                        },
-                        {
-                          title: 'Brushes & Supplies',
-                          desc: 'Pro rollers, trays & tape',
-                          dot: '#BE5C45',
-                          action: () => {
-                            setProductsOpen(false);
-                            navigateTo('home');
-                            setTimeout(() => scrollToSection('palettes'), 150);
-                          },
-                        },
-                      ].map((prod) => (
-                        <button
-                          key={prod.title}
-                          onClick={prod.action}
-                          className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 text-left transition-colors"
-                        >
-                          <span
-                            className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0"
-                            style={{ backgroundColor: prod.dot }}
-                          />
-                          <div className="flex-1">
-                            <div className="text-xs font-semibold text-[#142333] flex items-center justify-between">
-                              <span>{prod.title}</span>
-                              {prod.badge && (
-                                <span className="text-[9px] font-bold bg-[#C08A3E] text-white px-1.5 py-0.2 rounded-full uppercase">
-                                  {prod.badge}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-slate-500">
-                              {prod.desc}
-                            </div>
+                      },
+                    ].map((prod) => (
+                      <button
+                        key={prod.title}
+                        onClick={() => {
+                          setProductsOpen(false);
+                          prod.action();
+                        }}
+                        className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 text-left transition-colors group cursor-pointer"
+                      >
+                        <span
+                          className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0"
+                          style={{ backgroundColor: prod.dot }}
+                        />
+                        <div>
+                          <div className="text-xs font-semibold text-[#142333] group-hover:text-[#0D4A52] transition-colors">
+                            {prod.title}
                           </div>
-                        </button>
-                      ))}
-                    </div>
+                          <div className="text-[11px] text-slate-500">
+                            {prod.desc}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
 
-              <button
-                onClick={() => {
-                  navigateTo('home');
-                  setTimeout(() => scrollToSection('palettes'), 150);
-                }}
-                className="hover:text-[#1B5153] transition-colors"
-              >
-                Color Inspiration
-              </button>
-              <button
-                onClick={() =>
-                  triggerToast('Store Locator: 140+ Accord Paint Studios open near you!')
-                }
-                className="hover:text-[#1B5153] transition-colors"
-              >
-                Find a Store
-              </button>
-              <button
-                onClick={() => {
-                  navigateTo('home');
-                  setTimeout(() => scrollToSection('transformations'), 150);
-                }}
-                className="hover:text-[#1B5153] transition-colors"
-              >
-                Get Inspired
-              </button>
-            </nav>
-
-            {/* Right CTA Button */}
             <button
-              onClick={() => {
-                navigateTo('home');
-                setTimeout(() => scrollToSection('visualizer'), 150);
-              }}
-              className="bg-[#1B5153] hover:bg-[#133C3E] text-white text-xs sm:text-[13px] font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow transition-all duration-200 active:scale-95"
+              onClick={() => scrollToSection('products')}
+              className="hover:text-[#0D4A52] transition-colors cursor-pointer"
+            >
+              Catalog & Colors
+            </button>
+            <button
+              onClick={() => scrollToSection('visualizer')}
+              className="hover:text-[#0D4A52] transition-colors cursor-pointer"
+            >
+              Visualizer
+            </button>
+            <button
+              onClick={() =>
+                triggerToast('Store Locator: 140+ Accord Paint Studios open near you!')
+              }
+              className="hover:text-[#0D4A52] transition-colors cursor-pointer"
+            >
+              Find a Store
+            </button>
+            <button
+              onClick={() => scrollToSection('transformations')}
+              className="hover:text-[#0D4A52] transition-colors cursor-pointer"
+            >
+              Transformations
+            </button>
+          </nav>
+
+          {/* Right Action Buttons */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Direct Product Page Button */}
+            <button
+              onClick={() => navigateToProduct()}
+              className="bg-[#E4EEEE] hover:bg-[#d5e4e4] text-[#0D4A52] text-xs sm:text-[13px] font-bold px-3.5 sm:px-4 py-2 rounded-full transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            >
+              <span>Product Page</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Visualizer App Button */}
+            <button
+              onClick={() => scrollToSection('visualizer')}
+              className="hidden sm:inline-flex bg-[#0D4A52] hover:bg-[#09393F] text-white text-xs sm:text-[13.5px] font-semibold px-5 sm:px-6 py-2 sm:py-2.5 rounded-full shadow-sm hover:shadow transition-all duration-200 active:scale-95 cursor-pointer"
             >
               Visualizer App
             </button>
+
+            {/* Mobile Hamburger Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Toggle navigation"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Dropdown Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-[#FAF9F5] border-b border-slate-200 px-5 py-4 space-y-3 animate-fadeIn">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigateToProduct();
+              }}
+              className="w-full text-left bg-gradient-to-r from-[#0D4A52] to-[#182C49] text-white p-3.5 rounded-2xl shadow-sm flex items-center justify-between"
+            >
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                  ★ Flagship Product Page
+                </span>
+                <div className="text-sm font-bold mt-0.5">
+                  Luxury Semi Gloss Emulsion
+                </div>
+                <div className="text-[11px] text-slate-200 mt-0.5">
+                  View specs, sizes, prices & coverage calculator →
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white/80 shrink-0" />
+            </button>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  scrollToSection('products');
+                }}
+                className="bg-white border border-slate-200/80 p-2.5 rounded-xl text-left hover:bg-slate-50"
+              >
+                <div className="text-xs font-bold text-[#142333]">All Products</div>
+                <div className="text-[10px] text-slate-500">9 Paint Collections</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  scrollToSection('visualizer');
+                }}
+                className="bg-white border border-slate-200/80 p-2.5 rounded-xl text-left hover:bg-slate-50"
+              >
+                <div className="text-xs font-bold text-[#142333]">Visualizer App</div>
+                <div className="text-[10px] text-slate-500">Preview on walls</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  scrollToSection('transformations');
+                }}
+                className="bg-white border border-slate-200/80 p-2.5 rounded-xl text-left hover:bg-slate-50"
+              >
+                <div className="text-xs font-bold text-[#142333]">Transformations</div>
+                <div className="text-[10px] text-slate-500">Before & After</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  triggerToast('Store Locator: 140+ Accord Studios open near you!');
+                }}
+                className="bg-white border border-slate-200/80 p-2.5 rounded-xl text-left hover:bg-slate-50"
+              >
+                <div className="text-xs font-bold text-[#142333]">Find a Store</div>
+                <div className="text-[10px] text-slate-500">Dealer locator</div>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ==========================================
@@ -1200,42 +1395,55 @@ export default function App() {
               <Reveal direction="up" delay={220}>
                 <div className="mt-7 flex flex-wrap items-center gap-3.5">
                   <button
-                    onClick={() => scrollToSection('palettes')}
-                    className="bg-[#1B5153] hover:bg-[#133C3E] text-white font-semibold text-xs sm:text-sm px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-95"
+                    onClick={() => scrollToSection('products')}
+                    className="bg-[#0D4A52] hover:bg-[#09393F] text-white font-semibold text-xs sm:text-sm px-7 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer"
                   >
                     Explore Our Palette
                   </button>
                   <button
                     onClick={() => scrollToSection('visualizer')}
-                    className="bg-transparent hover:bg-slate-900/5 text-[#142333] font-semibold text-xs sm:text-sm px-6 py-3 rounded-full border border-slate-500/80 transition-all duration-200 active:scale-95"
+                    className="bg-transparent hover:bg-slate-100/70 text-[#0D4A52] font-semibold text-xs sm:text-sm px-7 py-3 rounded-full border border-[#0D4A52] transition-all duration-200 active:scale-95 cursor-pointer"
                   >
                     Try Visualizer
+                  </button>
+                </div>
+
+                {/* Direct Demo link to Flagship Product Page */}
+                <div className="mt-4 flex items-center gap-2 text-xs text-slate-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                  <span className="font-medium">Flagship Demo:</span>
+                  <button
+                    onClick={() => navigateToProduct()}
+                    className="text-[#0D4A52] hover:text-[#09393F] font-semibold underline underline-offset-2 flex items-center gap-1 group cursor-pointer"
+                  >
+                    <span>View Luxury Semi Gloss product page</span>
+                    <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                   </button>
                 </div>
               </Reveal>
 
               {/* 3 Feature Trust Badges */}
               <Reveal direction="up" delay={300}>
-                <div className="mt-8 pt-2 grid grid-cols-3 gap-3 sm:gap-5 max-w-md">
+                <div className="mt-9 pt-1 flex flex-wrap items-center gap-6 sm:gap-7">
                   <div className="flex items-center gap-2">
-                    <Leaf className="w-4 h-4 text-[#1B5153] shrink-0 stroke-[2]" />
-                    <span className="text-[11px] sm:text-xs text-slate-600 leading-tight">
+                    <Leaf className="w-4 h-4 text-[#142333] shrink-0 stroke-[1.8]" />
+                    <span className="text-[11px] sm:text-xs text-slate-700 font-medium leading-tight">
                       Low VOC /
                       <br />
                       Eco-friendly
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-[#1B5153] shrink-0 stroke-[2]" />
-                    <span className="text-[11px] sm:text-xs text-slate-600 leading-tight">
+                    <Palette className="w-4 h-4 text-[#142333] shrink-0 stroke-[1.8]" />
+                    <span className="text-[11px] sm:text-xs text-slate-700 font-medium leading-tight">
                       Rich, Long-
                       <br />
                       Lasting Color
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#1B5153] shrink-0 stroke-[2]" />
-                    <span className="text-[11px] sm:text-xs text-slate-600 leading-tight">
+                    <ShieldCheck className="w-4 h-4 text-[#142333] shrink-0 stroke-[1.8]" />
+                    <span className="text-[11px] sm:text-xs text-slate-700 font-medium leading-tight">
                       100% Satisfaction
                       <br />
                       Guarantee
@@ -1246,83 +1454,31 @@ export default function App() {
             </div>
 
             {/* Right Column: Room Showcase with Painterly Brush Strokes & Paint Can */}
-            <div className="lg:col-span-6 relative flex items-center justify-center py-6 px-4 sm:px-8">
+            <div className="lg:col-span-6 relative flex items-center justify-center py-4 px-2 sm:px-4">
               <Reveal
                 direction="left"
                 delay={150}
-                className="relative w-full max-w-[460px]"
+                className="relative w-full max-w-[530px] flex items-center justify-center group"
               >
-                {/* SVG Multi-Color Brush Strokes Behind Photo */}
-                <HeroBrushStrokes scrollY={scrollY} mousePos={mousePos} />
+                {/* Authentic Mockup Visual with Painterly Acrylic Strokes, Living Room & Accord Paint Tin */}
+                <img
+                  src="/images/brand/hero-mockup-transparent~2.png"
+                  alt="Accord Paints Designer Living Room and Color Palette"
+                  className="w-full h-auto object-contain select-none transition-transform duration-500 hover:scale-[1.015]"
+                  draggable={false}
+                />
 
-                {/* Main Rounded Interior Room Frame */}
-                <div className="relative z-10 rounded-[26px] overflow-hidden shadow-2xl border-4 border-white/90 aspect-[4/3.4] bg-[#A75540]">
-                  {/* Room Base Image */}
-                  <img
-                    src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1000&q=85"
-                    alt="Modern living room painted with Accord Paints"
-                    className="w-full h-full object-cover"
-                  />
-
-                  {/* Dynamic Wall Color Overlay so users can test colors right on the Hero wall */}
-                  <div
-                    className="absolute inset-0 transition-colors duration-700 pointer-events-none"
-                    style={{
-                      backgroundColor: heroWallColor,
-                      mixBlendMode: 'multiply',
-                      opacity: 0.58,
-                    }}
-                  />
-
-                  {/* Paint Roller Action Strip on Upper-Right Wall (Matching Mockup) */}
-                  <div className="absolute top-0 right-12 w-24 h-28 pointer-events-none hidden sm:block">
-                    {/* Freshly rolled vertical swatch strip */}
-                    <div
-                      className="w-16 h-24 mx-auto opacity-90 rounded-b-sm shadow-inner transition-colors duration-500"
-                      style={{ backgroundColor: heroWallColor }}
-                    />
-                    {/* Roller Cylinder & Metal Arm */}
-                    <div className="relative -mt-2 flex items-center justify-center">
-                      <div
-                        className="w-16 h-4 rounded-full shadow-md border border-white/30"
-                        style={{ backgroundColor: heroWallColor }}
-                      />
-                      <div className="w-3 h-7 border-r-2 border-b-2 border-slate-300 rounded-br-md -ml-1 mt-3" />
-                    </div>
+                {/* Interactive Clickable Area & Visual Badge on Paint Can */}
+                <div
+                  onClick={() => navigateToProduct()}
+                  title="Click to view Flagship Product Details"
+                  className="absolute bottom-2 right-4 w-36 sm:w-44 h-40 sm:h-48 cursor-pointer rounded-2xl flex items-end justify-center pb-2 z-20 group/can"
+                >
+                  <div className="bg-white/95 hover:bg-white text-[#142333] hover:text-[#0D4A52] px-3.5 py-1.5 rounded-full shadow-lg border border-white/90 flex items-center gap-2 text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>View Product Page</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#0D4A52] group-hover/can:translate-x-0.5 transition-transform" />
                   </div>
-
-                  {/* Interactive Quick Wall Swatch Switcher Pill (Top-Left inside Hero photo) */}
-                  <div className="absolute top-3.5 left-3.5 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md flex items-center gap-2 border border-white/60">
-                    <span className="text-[11px] font-semibold text-[#142333] mr-0.5">
-                      {heroWallName}
-                    </span>
-                    {[
-                      { name: 'Terracotta Dream', hex: '#BC5B45' },
-                      { name: 'Forest Mist', hex: '#256666' },
-                      { name: 'Golden Hour', hex: '#D99B38' },
-                      { name: 'Deep Pine', hex: '#1B3254' },
-                    ].map((sw) => (
-                      <button
-                        key={sw.name}
-                        onClick={() => {
-                          setHeroWallColor(sw.hex);
-                          setHeroWallName(sw.name);
-                        }}
-                        title={`Preview ${sw.name}`}
-                        className={`w-4 h-4 rounded-full transition-transform ${
-                          heroWallColor === sw.hex
-                            ? 'scale-125 ring-2 ring-[#142333] ring-offset-1'
-                            : 'hover:scale-110 opacity-85'
-                        }`}
-                        style={{ backgroundColor: sw.hex }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Overlapping Accord Paints Bucket in Bottom-Right Corner */}
-                <div className="absolute -bottom-6 right-1 sm:right-2 w-28 sm:w-32 h-32 sm:h-36 z-20 pointer-events-none">
-                  <AccordPaintCan accentColor="#1B5153" />
                 </div>
               </Reveal>
             </div>
@@ -1331,138 +1487,13 @@ export default function App() {
       </section>
 
       {/* ==========================================
-          3. TRENDING COLORS FOR 2026 (OUR POPULAR PALETTES)
+          SIGNATURE PAINT COLLECTIONS & FLAGSHIP SPOTLIGHT
       ========================================== */}
-      <section
-        id="palettes"
-        className="w-full py-12 sm:py-16 relative"
-      >
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Column: Overlapping Typography + Tall Vertical Interior Photo */}
-            <div className="lg:col-span-5 relative flex items-center min-h-[300px] sm:min-h-[330px]">
-              {/* Left Editorial Text */}
-              <Reveal
-                direction="right"
-                className="relative z-20 w-[62%] sm:w-[58%] pr-2 pointer-events-none"
-              >
-                <p className="text-xs sm:text-[13px] font-medium text-slate-600 mb-1.5">
-                  Our Popular Palettes
-                </p>
-                <h2 className="font-serif-editorial text-3xl sm:text-4xl font-bold text-[#142333] leading-[1.12]">
-                  Trending Colors
-                  <br />
-                  for 2026
-                </h2>
-                <p className="mt-3 text-xs sm:text-[13.5px] text-slate-600 leading-relaxed max-w-[200px]">
-                  Trending shades of our modern collection curated to find your
-                  ideal color palette.
-                </p>
-              </Reveal>
+      <ProductsSection
+        onOpenProductDetail={(prod) => navigateToProduct(prod)}
+        onTriggerToast={triggerToast}
+      />
 
-              {/* Tall Vertical Rounded Room Image on the Right Half of Left Column */}
-              <div
-                className="w-[48%] sm:w-[46%] h-[280px] sm:h-[310px] ml-auto rounded-2xl overflow-hidden shadow-lg border border-slate-200/80 relative z-10"
-                style={{
-                  transform: `translate3d(0, ${Math.min(
-                    18,
-                    Math.max(-18, (scrollY - 350) * -0.04)
-                  )}px, 0)`,
-                }}
-              >
-                {/* Two-tone Teal & Terracotta Room Photo matching Mockup */}
-                <img
-                  src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=700&q=80"
-                  alt="Two-tone trending interior room"
-                  className="w-full h-full object-cover"
-                />
-                {/* Subtle right-side terracotta wall accent simulation to mirror the split wall in mockup */}
-                <div className="absolute top-0 bottom-12 right-0 w-1/3 bg-[#B85A43]/55 mix-blend-multiply pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Right Column: Carousel Controls + Swatch Cards */}
-            <div className="lg:col-span-7">
-              {/* Top-Right Carousel Navigation Buttons */}
-              <div className="flex justify-end items-center gap-2 mb-3">
-                <button
-                  onClick={() => scrollCarousel('left')}
-                  aria-label="Previous palette"
-                  className="w-7 h-7 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center shadow-xs transition-transform active:scale-90"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => scrollCarousel('right')}
-                  aria-label="Next palette"
-                  className="w-7 h-7 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 flex items-center justify-center shadow-xs transition-transform active:scale-90"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Horizontal Scrollable Swatch Cards */}
-              <div
-                ref={carouselRef}
-                className="flex gap-3.5 overflow-x-auto no-scrollbar pb-4 pt-1 snap-x snap-mandatory"
-              >
-                {TRENDING_PALETTES.map((item, idx) => (
-                  <Reveal
-                    key={item.id}
-                    delay={idx * 80}
-                    direction="up"
-                    className="snap-start shrink-0 w-[148px] sm:w-[156px]"
-                  >
-                    <div
-                      onClick={() => handleCopyHex(item)}
-                      className="group bg-white rounded-2xl overflow-hidden shadow-[0_6px_24px_rgba(15,23,42,0.06)] hover:shadow-[0_14px_30px_rgba(15,23,42,0.13)] border border-slate-100 transition-all duration-300 hover:-translate-y-1.5 cursor-pointer flex flex-col"
-                    >
-                      {/* Top Solid Paint Swatch Block */}
-                      <div
-                        className="h-24 w-full relative transition-transform duration-300"
-                        style={{ backgroundColor: item.swatchHex }}
-                      >
-                        <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-black/20 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          {copiedCode === item.id ? (
-                            <Check className="w-3.5 h-3.5" />
-                          ) : (
-                            <Copy className="w-3 h-3" />
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Middle Swatch Name & Code */}
-                      <div className="px-3 pt-2.5 pb-2">
-                        <h3 className="font-bold text-xs sm:text-[13px] text-[#142333] truncate">
-                          {item.name}
-                        </h3>
-                        <p className="text-[10.5px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
-                          {item.code}
-                        </p>
-                      </div>
-
-                      {/* Bottom Room Thumbnail inside Card */}
-                      <div className="px-2.5 pb-2.5 mt-auto">
-                        <div className="h-16 w-full rounded-xl overflow-hidden relative">
-                          <img
-                            src={item.roomImage}
-                            alt={item.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                          <div
-                            className="absolute inset-0 opacity-30 mix-blend-multiply"
-                            style={{ backgroundColor: item.swatchHex }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </Reveal>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ==========================================
           4. VISUALIZER APP & VALUE PROPOSITION
@@ -1716,17 +1747,6 @@ export default function App() {
           7. FOOTER (DEEP MIDNIGHT NAVY)
       ========================================== */}
       <footer className="w-full bg-[#162637] text-white pt-14 pb-8 relative overflow-hidden mt-auto">
-        {/* Subtle Decorative 4-Point Star on Far Right (Matching Mockup) */}
-        <svg
-          viewBox="0 0 120 120"
-          fill="none"
-          className="w-28 h-28 absolute right-4 bottom-10 text-white/10 pointer-events-none select-none"
-        >
-          <path
-            d="M60 0C63 42 78 57 120 60C78 63 63 78 60 120C57 78 42 63 0 60C42 57 57 42 60 0Z"
-            fill="currentColor"
-          />
-        </svg>
 
         <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 relative z-10">
           <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-12 gap-8 pb-10 border-b border-white/10">
@@ -1801,28 +1821,75 @@ export default function App() {
               <ul className="space-y-2 text-xs text-slate-300">
                 <li>
                   <button
-                    onClick={() => navigateTo('product')}
-                    className="text-[#EAB849] hover:underline font-semibold flex items-center gap-1.5"
+                    onClick={() =>
+                      navigateToProduct({
+                        id: 'accord-royale',
+                        name: 'Accord Royale Matte',
+                      })
+                    }
+                    className="text-[#EAB849] hover:underline font-semibold flex items-center gap-1.5 cursor-pointer text-left"
                   >
                     <span>Accord Royale Matte</span>
-                    <span className="text-[9px] bg-[#C08A3E]/40 px-1 py-0.2 rounded text-white uppercase">
+                    <span className="text-[9px] bg-[#C08A3E]/40 px-1.5 py-0.2 rounded text-white uppercase">
                       Top
                     </span>
                   </button>
                 </li>
-                {['Interior', 'Exterior', 'Primers', 'Supplies'].map((link) => (
-                  <li key={link}>
-                    <button
-                      onClick={() => {
-                        navigateTo('home');
-                        setTimeout(() => scrollToSection('palettes'), 150);
-                      }}
-                      className="hover:text-white transition-colors"
-                    >
-                      {link}
-                    </button>
-                  </li>
-                ))}
+                <li>
+                  <button
+                    onClick={() => navigateToProduct()}
+                    className="hover:text-amber-300 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer text-left"
+                  >
+                    <span>Flagship Semi-Gloss ★</span>
+                    <span className="text-[9.5px] bg-amber-400/20 text-amber-300 px-1.5 py-0.2 rounded-full font-bold">New</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => navigateToProduct()}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    Interior Luxury Emulsion
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() =>
+                      navigateToProduct({
+                        id: 'exterior-emulsion',
+                        name: 'Exterior WeatherShield Emulsion',
+                        series: 'Gold Series',
+                        category: 'Exterior Wall Care',
+                        tagline: 'Extreme weather, UV and heavy rainfall protection',
+                        sheen: 'Eggshell Weather-Proof',
+                        coverage: '110 - 130 sq.ft / Litre',
+                        dryingTime: '45 mins (Touch), 4-6 hrs (Recoat)',
+                        dilution: '40% with clean water',
+                        packSizes: ['1 L', '4 L', '10 L', '20 L'],
+                        image: '/images/products/exterior-emulsion.jpg',
+                      })
+                    }
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    Exterior WeatherShield
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => scrollToSection('products')}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    Primers & Base Coats
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => scrollToSection('products')}
+                    className="text-[#0AA6BB] hover:underline transition-colors cursor-pointer text-left"
+                  >
+                    Browse All Catalog →
+                  </button>
+                </li>
               </ul>
             </div>
 
