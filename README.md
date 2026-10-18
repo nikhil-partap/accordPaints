@@ -4,7 +4,7 @@ Marketing and product-catalogue website for Accord Paints, built with React 19, 
 
 ## Getting started
 
-```bash
+```bash 
 npm install
 npm run dev      # start the dev server
 npm run build    # production build into dist/
