@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Design sources and parked files (not shipped)
+design/
+_to_delete/
+public/images/products/cutout/*.png
