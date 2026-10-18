@@ -1,45 +1,62 @@
 @import "tailwindcss";
 
+/* Accord design tokens — "Warm Indian Home" direction */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+
+  --color-cream: #faf6ef;
+  --color-sand: #f1eadf;
+  --color-stone: #e2d9cb;
+  --color-ink: #1d2823;
+  --color-ink-soft: #4a554f;
+  --color-muted: #737b75;
+  --color-forest: #1f4a3f;
+  --color-forest-dark: #163830;
+  --color-forest-soft: #e3ece6;
+  --color-terracotta: #b65f42;
+  --color-terracotta-soft: #f5e4dc;
+  --color-leaf: #6ba539;
+  --color-gold: #b08a4a;
+}
+
 html {
   scroll-behavior: smooth;
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  scroll-padding-top: 96px;
 }
 
 body {
   margin: 0;
-  padding: 0;
-  background-color: #FAF9F5;
-  color: #142333;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
   min-height: 100vh;
-  width: 100%;
 }
 
-.font-serif-editorial {
-  font-family: 'Fraunces', Georgia, serif;
-  letter-spacing: -0.02em;
+.font-serif {
+  letter-spacing: -0.015em;
 }
 
-/* Hide scrollbars on horizontal swatch carousel */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+:focus-visible {
+  outline: 2px solid var(--color-forest);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
-@keyframes floatSlow {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
 
-.animate-float-slow {
-  animation: floatSlow 4s ease-in-out infinite;
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.animate-toast-in { animation: toast-in 0.25s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
